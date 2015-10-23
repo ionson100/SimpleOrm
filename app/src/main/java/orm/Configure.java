@@ -173,12 +173,44 @@ public class Configure implements ISession {
                     e.printStackTrace();
                 }
 
-            if(str.type==long.class)
+            if(str.type==Short.class)
                 try {
-                    values.put(str.columName, (int) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (Short) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            if(str.type==Long.class)
+                try {
+                    values.put(str.columName, (Long) item.getClass().getField(str.fieldName).get(item));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            if(str.type==Integer.class)
+                try {
+                    values.put(str.columName, (Integer) item.getClass().getField(str.fieldName).get(item));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            if(str.type==Double.class)
+                try {
+                    values.put(str.columName, (Double) item.getClass().getField(str.fieldName).get(item));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            if(str.type==Float.class)
+                try {
+                    values.put(str.columName, (Float) item.getClass().getField(str.fieldName).get(item));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+
+
+
+
+
             if(str.type==byte[].class)
                 try {
                     values.put(str.columName, (byte[]) item.getClass().getField(str.fieldName).get(item));
@@ -337,6 +369,47 @@ public class Configure implements ISession {
                     e.printStackTrace();
                 }
             }
+            if (str.type ==Integer.class){
+                try {
+                    int ii=c.getInt(i);
+                    o.getClass().getField(str.fieldName).set(o, ii);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            ////////
+            if (str.type ==Double.class){
+                try {
+                    Double d=c.getDouble(i);
+                    o.getClass().getField(str.fieldName).set(o,d );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (str.type ==Float.class){
+                try {
+                    Float f=c.getFloat(i);
+                    o.getClass().getField(str.fieldName).set(o, f);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (str.type ==Long.class){
+                try {
+                    Long l=c.getLong(i);
+                    o.getClass().getField(str.fieldName).set(o, l);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (str.type ==Short.class){
+                try {
+                    Short sh=c.getShort(i);
+                    o.getClass().getField(str.fieldName).set(o,sh );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             if (str.type ==boolean.class){
                 boolean val;
                 val = c.getInt(i) != 0;
@@ -471,10 +544,11 @@ public class Configure implements ISession {
     }
 
     static String pizdaticusKey(ItemField field){
-        if(field.type==double.class||field.type==float.class){
+        if(field.type==double.class||field.type==float.class||field.type==Double.class||field.type==Float.class){
             return " REAL ";
         }
-        if(field.type==int.class||field.type==long.class||field.type==short.class||field.type==byte.class){
+        if(field.type==int.class||field.type==long.class||field.type==short.class||field.type==byte.class||field.type==Integer.class||
+                field.type==Long.class||field.type==Short.class||field.type==Byte.class){
             return " INTEGER ";
         }
         if(field.type==String.class){
@@ -486,16 +560,17 @@ public class Configure implements ISession {
         return "";
     }
     static String pizdaticusField(ItemField field){
-        if(field.type==double.class||field.type==float.class){
+        if(field.type==double.class||field.type==float.class||field.type==Double.class||field.type==Float.class){
             return " REAL DEFAULT 0, ";
         }
-        if(field.type==int.class||field.type==Enum.class||field.type==long.class||field.type==short.class||field.type==byte.class){
+        if(field.type==int.class||field.type==Enum.class||field.type==long.class||field.type==short.class||field.type==byte.class||field.type==Integer.class||
+                field.type==Long.class||field.type==Short.class){
             return " INTEGER DEFAULT 0, ";
         }
         if(field.type==String.class){
             return " TEXT, ";
         }
-        if(field.type==boolean.class){
+        if(field.type==boolean.class||field.type==Boolean.class){
             return " BOOL DEFAULT 0, ";
         }
 

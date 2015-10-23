@@ -16,6 +16,9 @@ public class Test1 implements IActionOrm<Test1>{
     @Column(name = "longs")
     public long longs;
 
+    @Column(name = "inte")
+    public Integer inte;
+
     @Column(name = "ashort")
     public short aShort;
 
