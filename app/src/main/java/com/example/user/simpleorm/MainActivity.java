@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         rr[0]=3;
         rr[1]=45;
         dd.aBlob=rr;
-        dd.inte = 35;
+        dd.inte = 353;
 
 
         ISession ses=Configure.getSession();
