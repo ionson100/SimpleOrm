@@ -6,8 +6,8 @@ class cacheMetaDate<T> {
 
     private int isIAction=0;
     private Class result=null;
-    public List<ItemFild> listColumn = null;
-    public ItemFild keyColumn = null;
+    public List<ItemField> listColumn = null;
+    public ItemField keyColumn = null;
     String tableName=null;
     public boolean isIAction(){
         if(isIAction==1) return  true;
@@ -43,7 +43,7 @@ class cacheMetaDate<T> {
 
     public  String getStringForSelect(){
         StringBuilder sb=new StringBuilder();
-        for(ItemFild f:listColumn){
+        for(ItemField f:listColumn){
             sb.append(f.columName);
             sb.append(", ");
 

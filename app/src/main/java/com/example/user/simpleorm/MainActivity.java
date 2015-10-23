@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
             }
             ses.commitTransaction();
         }catch (Exception ex){
-            ses.endTaransaction();
+            ses.endTransaction();
     }
 
        // Configure.getSession().delete(df);
