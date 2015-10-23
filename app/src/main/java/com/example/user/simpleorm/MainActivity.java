@@ -1,7 +1,7 @@
 package com.example.user.simpleorm;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 
 import orm.Configure;
 import orm.ISession;
@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         rr[0]=3;
         rr[1]=45;
         dd.aBlob=rr;
-        dd.inte=34;
+        dd.inte = 35;
 
 
         ISession ses=Configure.getSession();
