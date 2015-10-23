@@ -53,12 +53,12 @@ public class Configure implements ISession {
 
 
 
-    public  Configure(String dataBaseName,Context context,boolean reloadBase){//int ver,,boolean isWriteLog
+    public  Configure(String dataBaseName,Context context,boolean reloadBase){
         Configure.reloadBase =reloadBase;
-        new Configure( dataBaseName,  context);//isWriteLog,
+        new Configure( dataBaseName,  context);
     }
 
-    public Configure(String dataBaseName,Context context){//,int verboolean isWriteLog,
+    public Configure(String dataBaseName,Context context){
         Configure.dataBaseName =dataBaseName;
 
         myDbHelper= new DataBaseHelper(context, Configure.dataBaseName);
@@ -74,8 +74,7 @@ public class Configure implements ISession {
             if(!myDbHelper.checkDataBase()){
                 myDbHelper.createDataBase();
             }
-            else{
-            }
+
         }
 
 
@@ -141,7 +140,7 @@ public class Configure implements ISession {
 
     private <T> ContentValues getContentValues(T item, cacheMetaDate<?> d) {
         ContentValues values = new ContentValues();
-        for (ItemFild str : d.listColumn) {
+        for (ItemField str : d.listColumn) {
             if(str.type==String.class)
                 try {
                     values.put(str.columName, (String) item.getClass().getField(str.fieldName).get(item));
@@ -197,7 +196,7 @@ public class Configure implements ISession {
             if(str.type==boolean.class)
                 try {
                     boolean val= (boolean) item.getClass().getField(str.fieldName).get(item);
-                    if(val==true){
+                    if(val){
                         values.put(str.columName, 1);
                     }else{
                         values.put(str.columName, 0);
@@ -235,25 +234,25 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> List<T> getList(Class<T> tClass, String where, Object... objectses)  {
+    public <T> List<T> getList(Class<T> tClass, String where, Object... objects)  {
         List<T> list=new ArrayList<>();
         SQLiteDatabase con;
         try {
             con=sqLiteDatabaseForReadable;
             cacheMetaDate d=CacheDictionary.getCacheMetaDate(tClass);
             Cursor c=null;
-            if(where==null&&objectses==null) {
+            if(where==null&& objects ==null) {
                 String[] li=d.getStringSelect();
                 c = con.query(d.tableName,li,null,null,null, null,null,null);
             }
             String[] sdd=d.getStringSelect();
-            if(where!=null&&objectses==null) {
+            if(where!=null&& objects ==null) {
                 c = con.query(d.tableName,sdd,where,null,null, null,null,null);
             }
-            if(where!=null&&objectses!=null) {
-                String[] lstr=new String[objectses.length];
-                for (int i=0;i<objectses.length;i++){
-                    lstr[i]=String.valueOf(objectses[i]);
+            if(where!=null&& objects !=null) {
+                String[] lstr=new String[objects.length];
+                for (int i=0;i< objects.length;i++){
+                    lstr[i]=String.valueOf(objects[i]);
                 }
                 c = con.query(d.tableName,sdd,where,lstr,null, null,null,null);
             }
@@ -279,8 +278,8 @@ public class Configure implements ISession {
         return list;
     }
 
-    private void Companaund(List<ItemFild> listIf, ItemFild key, Cursor c, Object o)  {
-        for (ItemFild str : listIf) {
+    private void Companaund(List<ItemField> listIf, ItemField key, Cursor c, Object o)  {
+        for (ItemField str : listIf) {
             int i = c.getColumnIndex(str.columName);
             if (str.type ==int.class){
                 try {
@@ -387,7 +386,7 @@ public class Configure implements ISession {
     @Override
     public void execSQL(String sql, Object ... objects) {
         List<String> arrayList = new ArrayList<>();
-        String[] array =null;
+        String[] array;
         if(objects!=null&&objects.length>0){
             for (Object object : objects) {
                 arrayList.add(String.valueOf(object));
@@ -412,7 +411,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public void endTaransaction() {
+    public void endTransaction() {
         myDbHelper.getWritableDatabase().endTransaction();
     }
 
@@ -471,36 +470,36 @@ public class Configure implements ISession {
         }
     }
 
-    static String pizdaticusKey(ItemFild fild){
-        if(fild.type==double.class||fild.type==float.class){
+    static String pizdaticusKey(ItemField field){
+        if(field.type==double.class||field.type==float.class){
             return " REAL ";
         }
-        if(fild.type==int.class||fild.type==long.class||fild.type==short.class||fild.type==byte.class){
+        if(field.type==int.class||field.type==long.class||field.type==short.class||field.type==byte.class){
             return " INTEGER ";
         }
-        if(fild.type==String.class){
+        if(field.type==String.class){
             return " TEXT ";
         }
-        if(fild.type==boolean.class){
+        if(field.type==boolean.class){
             return " BOOL ";
         }
         return "";
     }
-    static String pizdaticusFild(ItemFild fild){
-        if(fild.type==double.class||fild.type==float.class){
+    static String pizdaticusField(ItemField field){
+        if(field.type==double.class||field.type==float.class){
             return " REAL DEFAULT 0, ";
         }
-        if(fild.type==int.class||fild.type==Enum.class||fild.type==long.class||fild.type==short.class||fild.type==byte.class){
+        if(field.type==int.class||field.type==Enum.class||field.type==long.class||field.type==short.class||field.type==byte.class){
             return " INTEGER DEFAULT 0, ";
         }
-        if(fild.type==String.class){
+        if(field.type==String.class){
             return " TEXT, ";
         }
-        if(fild.type==boolean.class){
+        if(field.type==boolean.class){
             return " BOOL DEFAULT 0, ";
         }
 
-        if(fild.type==byte[].class){
+        if(field.type==byte[].class){
             return " BLOB, ";
         }
         return "";
@@ -509,13 +508,13 @@ public class Configure implements ISession {
     public static void createTable(Class<?> aClass) {
         cacheMetaDate date=  CacheDictionary.getCacheMetaDate(aClass);
         StringBuilder sb=new StringBuilder("CREATE TABLE "+date.tableName+" (" );
-        sb.append(date.keyColumn.columName+" ");
+        sb.append(date.keyColumn.columName).append(" ");
         sb.append(pizdaticusKey(date.keyColumn));
         sb.append("PRIMARY KEY, ");
         for ( Object f : date.listColumn) {
-            ItemFild ff= (ItemFild) f;
+            ItemField ff= (ItemField) f;
             sb.append(ff.columName);
-            sb.append(pizdaticusFild(ff));
+            sb.append(pizdaticusField(ff));
         }
         String s=sb.toString().trim();
         String ss=s.substring(0,s.length()-1);
@@ -523,21 +522,21 @@ public class Configure implements ISession {
         Configure.getSession().execSQL(sql,null);
     }
 
-    public static void createTable(List<Class<?>> aClassL){
-        for (Class<?> aClass : aClassL) {
-            createTable(aClass);
-        }
-    }
+//    public static void createTable(List<Class<?>> aClassL){
+//        for (Class<?> aClass : aClassL) {
+//            createTable(aClass);
+//        }
+//    }
 
-    public static void createTable(Class<?> aClass,Object o){
-        createTable(aClass);
-        Configure.getSession().insert(o);
-    }
+//    public static void createTable(Class<?> aClass,Object o){
+//        createTable(aClass);
+//        Configure.getSession().insert(o);
+//    }
 
-    public static void createTable(Class<?> aClass,List<Object> objectList){
-        createTable(aClass);
-        for (Object o : objectList) {
-            Configure.getSession().insert(o);
-        }
-    }
+//    public static void createTable(Class<?> aClass,List<Object> objectList){
+//        createTable(aClass);
+//        for (Object o : objectList) {
+//            Configure.getSession().insert(o);
+//        }
+//    }
 }
