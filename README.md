@@ -1,4 +1,4 @@
-# SimpleOrm for Android 
+# Simple Orm for Android 
 =======
 Quickstart
 
