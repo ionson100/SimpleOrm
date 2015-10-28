@@ -1,4 +1,4 @@
-# simpleOrm for Android 
+# SimpleOrm for Android 
 =======
 Quickstart
 
@@ -6,7 +6,7 @@ Quickstart
 
 **2.**  -Initialization ORM at the entry point of the program:
 
-```
+```java
  new Configure(
                getApplicationInfo().dataDir + "/test_data.pdb", //path file data
                getBaseContext(),// current contex
@@ -16,7 +16,7 @@ Quickstart
 ```
 
 **3.**  -Create class - map database tables.
-```
+```java
 @Table(name = "test1")
 public class Test1 implements IActionOrm<Test1>{
     @PrimaryKey(name = "id")
@@ -54,7 +54,7 @@ public class Test1 implements IActionOrm<Test1>{
 ```
 
 **4.**  -Program realization:
-```
+```java
   ISession ses=Configure.getSession();
         Object dds=  ses.executeScalar("SELECT name FROM sqlite_master WHERE type='table' AND name='test1';", null);
         if(dds==null){
@@ -62,7 +62,7 @@ public class Test1 implements IActionOrm<Test1>{
         }
 ```
 
-```
+```java
     <T> int update(T item);
     <T> int insert(T item);
     <T> int delete(T item);
