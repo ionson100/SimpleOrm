@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        new Configure(getApplicationInfo().dataDir + "/test_data.pdb", getBaseContext(), true, true);
+        new Configure(getApplicationInfo().dataDir + "/test_data.sqlite", getBaseContext(), true, true);
       Object dds=  Configure.getSession().executeScalar("SELECT name FROM sqlite_master WHERE type='table' AND name='test1';", null);
         if(dds==null){
             Configure.getSession().createTable(Test1.class);
