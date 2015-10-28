@@ -74,6 +74,6 @@ public class Test1 implements IActionOrm<Test1>{
     void commitTransaction();
     void endTransaction();
     void close();
-    ```
-    
-    **implements IActionOrm - optional**
+```
+
+**implements IActionOrm - optional**
