@@ -14,16 +14,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        new Configure(
-                getApplicationInfo().dataDir + "/test_data.pdb", //path file data
-                getBaseContext(),// current contex
-                true, // rewrite base file (debug)
-                true  // Write log
-        );
-        ISession ses = Configure.getSession();
-        Object dds = ses.executeScalar("SELECT name FROM sqlite_master WHERE type='table' AND name='test1';", null);
+       new Configure(getApplicationInfo().dataDir + "/test_data.pdb",getBaseContext(),true);
+      Object dds=  Configure.getSession().executeScalar("SELECT name FROM sqlite_master WHERE type='table' AND name='test1';", null);
         if(dds==null){
-            Configure.createTable(Test1.class);
+            Configure.getSession().createTable(Test1.class);
         }
 
         Test1 dd=new Test1();
@@ -38,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
         dd.inte = 35;
 
 
+        ISession ses=Configure.getSession();
         try{
             ses.beginTransaction();
             ses.insert(dd);
