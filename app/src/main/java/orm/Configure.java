@@ -23,61 +23,123 @@ public class Configure implements ISession {
     private SQLiteDatabase sqLiteDatabaseForWritable=null;
 
 
-    public static  String getBaseName(){
-        return dataBaseName;
+    private Configure() {
+
+
+        sqLiteDatabaseForReadable = GetSqLiteDatabaseForReadable();
+        sqLiteDatabaseForWritable = GetSqLiteDatabaseForWritable();
     }
 
-    public static Configure getSession(){
-        return new Configure();
-    }
-
-
-
-    private Configure(){
-
-
-        sqLiteDatabaseForReadable=GetSqLiteDatabaseForReadable();
-        sqLiteDatabaseForWritable=GetSqLiteDatabaseForWritable();
+    public Configure(String dataBaseName, Context context, boolean reloadBase, boolean isWriteLog) {
+        Configure.reloadBase = reloadBase;
+        Loger.isWrite = isWriteLog;
+        new Configure(dataBaseName, context);
     }
 
 
+    private Configure(String dataBaseName, Context context) {
+        Configure.dataBaseName = dataBaseName;
 
-
-
-    private static SQLiteDatabase GetSqLiteDatabaseForReadable() throws SQLException {
-        return myDbHelper.openDataBaseForReadable();
-    }
-    private static SQLiteDatabase GetSqLiteDatabaseForWritable() throws SQLException {
-        return myDbHelper.openDataBaseForWritable();
-    }
-
-
-
-    public  Configure(String dataBaseName,Context context,boolean reloadBase){
-        Configure.reloadBase =reloadBase;
-        new Configure( dataBaseName,  context);
-    }
-
-    public Configure(String dataBaseName,Context context){
-        Configure.dataBaseName =dataBaseName;
-
-        myDbHelper= new DataBaseHelper(context, Configure.dataBaseName);
-        if(reloadBase){
+        myDbHelper = new DataBaseHelper(context, Configure.dataBaseName);
+        if (reloadBase) {
             myDbHelper.getReadableDatabase();
             try {
-                myDbHelper. copyDataBase();
+                myDbHelper.copyDataBase();
             } catch (IOException e) {
-                throw new Error("Error copying database -"+e.getMessage());
+                Loger.LogE(e.getMessage());
+                throw new Error("Error copying database -" + e.getMessage());
             }
-        }
-        else{
-            if(!myDbHelper.checkDataBase()){
+        } else {
+            if (!myDbHelper.checkDataBase()) {
                 myDbHelper.createDataBase();
             }
 
         }
 
 
+    }
+
+    public static String getBaseName() {
+        return dataBaseName;
+    }
+
+    public static Configure getSession() {
+        return new Configure();
+    }
+
+    private static SQLiteDatabase GetSqLiteDatabaseForReadable() throws SQLException {
+        return myDbHelper.openDataBaseForReadable();
+    }
+
+    private static SQLiteDatabase GetSqLiteDatabaseForWritable() throws SQLException {
+        return myDbHelper.openDataBaseForWritable();
+    }
+
+    public static void createBase(String path) {
+        File f = new File(path);
+        if (f.exists()) return;
+        f.getParentFile().mkdirs();
+        try {
+            f.createNewFile();
+        } catch (IOException e) {
+            Loger.LogE(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    static String pizdaticusKey(ItemField field) {
+        if (field.type == double.class || field.type == float.class || field.type == Double.class || field.type == Float.class) {
+            return " REAL ";
+        }
+        if (field.type == int.class || field.type == long.class || field.type == short.class || field.type == byte.class || field.type == Integer.class ||
+                field.type == Long.class || field.type == Short.class || field.type == Byte.class) {
+            return " INTEGER ";
+        }
+        if (field.type == String.class) {
+            return " TEXT ";
+        }
+        if (field.type == boolean.class) {
+            return " BOOL ";
+        }
+        return "";
+    }
+
+    static String pizdaticusField(ItemField field) {
+        if (field.type == double.class || field.type == float.class || field.type == Double.class || field.type == Float.class) {
+            return " REAL DEFAULT 0, ";
+        }
+        if (field.type == int.class || field.type == Enum.class || field.type == long.class || field.type == short.class || field.type == byte.class || field.type == Integer.class ||
+                field.type == Long.class || field.type == Short.class) {
+            return " INTEGER DEFAULT 0, ";
+        }
+        if (field.type == String.class) {
+            return " TEXT, ";
+        }
+        if (field.type == boolean.class || field.type == Boolean.class) {
+            return " BOOL DEFAULT 0, ";
+        }
+
+        if (field.type == byte[].class) {
+            return " BLOB, ";
+        }
+        return "";
+    }
+
+    public static void createTable(Class<?> aClass) {
+        cacheMetaDate date = CacheDictionary.getCacheMetaDate(aClass);
+        StringBuilder sb = new StringBuilder("CREATE TABLE " + date.tableName + " (");
+        sb.append(date.keyColumn.columName).append(" ");
+        sb.append(pizdaticusKey(date.keyColumn));
+        sb.append("PRIMARY KEY, ");
+        for (Object f : date.listColumn) {
+            ItemField ff = (ItemField) f;
+            sb.append(ff.columName);
+            sb.append(pizdaticusField(ff));
+        }
+        String s = sb.toString().trim();
+        String ss = s.substring(0, s.length() - 1);
+        String sql = ss + ")";
+        Configure.getSession().execSQL(sql, null);
     }
 
     @Override
@@ -89,6 +151,7 @@ public class Configure implements ISession {
         try {
             key= item.getClass().getField(d.keyColumn.fieldName).get(item);
         } catch (Exception e) {
+            Loger.LogE(e.getMessage());
             e.printStackTrace();
         }
         assert key != null;
@@ -100,6 +163,7 @@ public class Configure implements ISession {
             try {
                 throw new Exception("Not Update");
             } catch (Exception e) {
+                Loger.LogE(e.getMessage());
                 e.printStackTrace();
             }
         }else{
@@ -123,6 +187,7 @@ public class Configure implements ISession {
             try {
                 throw new Exception("Not insert");
             } catch (Exception e) {
+                Loger.LogE(e.getMessage());
                 e.printStackTrace();
             }
         }else{
@@ -133,6 +198,7 @@ public class Configure implements ISession {
         try {
             item.getClass().getField(d.keyColumn.fieldName).set(item,i);
         } catch (Exception e) {
+            Loger.LogE(e.getMessage());
             e.printStackTrace();
         }
         return  i;
@@ -145,6 +211,7 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (String) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -152,24 +219,28 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (int) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             if(str.type==long.class)
                 try {
                     values.put(str.columName, (long) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             if(str.type==short.class)
                 try {
                     values.put(str.columName, (short) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             if(str.type==byte.class)
                 try {
                     values.put(str.columName, (byte) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -177,12 +248,14 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (Short) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             if(str.type==Long.class)
                 try {
                     values.put(str.columName, (Long) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -190,12 +263,14 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (Integer) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             if(str.type==Double.class)
                 try {
                     values.put(str.columName, (Double) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -203,6 +278,7 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (Float) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -215,6 +291,7 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (byte[]) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -222,6 +299,7 @@ public class Configure implements ISession {
                 try {
                     values.put(str.columName, (double) item.getClass().getField(str.fieldName).get(item));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -235,6 +313,7 @@ public class Configure implements ISession {
                     }
 
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
         }
@@ -250,6 +329,7 @@ public class Configure implements ISession {
         try {
             key= item.getClass().getField(d.keyColumn.fieldName).get(item);
         } catch (Exception e) {
+            Loger.LogE(e.getMessage());
             e.printStackTrace();
         }
         assert key != null;
@@ -261,6 +341,8 @@ public class Configure implements ISession {
             if(d.isIAction()){
                 ((IActionOrm)item).actionAfterDelete(item);
             }
+        } else {
+            Loger.LogE("Not Delete");
         }
         return  res;
     }
@@ -302,9 +384,11 @@ public class Configure implements ISession {
                 }
             }
         } catch (SQLException e) {
+            Loger.LogE(e.getMessage());
             e.printStackTrace();
             return null;
         } catch (Exception e) {
+            Loger.LogE(e.getMessage());
             e.printStackTrace();
         }
         return list;
@@ -317,105 +401,119 @@ public class Configure implements ISession {
                 try {
                     o.getClass().getField(str.fieldName).setInt(o,c.getInt(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==String.class){
+            if (str.type == String.class) {
                 try {
                     o.getClass().getField(str.fieldName).set(o, c.getString(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==double.class){
+            if (str.type == double.class) {
                 try {
                     o.getClass().getField(str.fieldName).setDouble(o, c.getDouble(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==float.class){
+            if (str.type == float.class) {
                 try {
                     o.getClass().getField(str.fieldName).setFloat(o, c.getFloat(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==long.class){
+            if (str.type == long.class) {
                 try {
                     o.getClass().getField(str.fieldName).setLong(o, c.getLong(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==short.class){
+            if (str.type == short.class) {
                 try {
                     o.getClass().getField(str.fieldName).setShort(o, c.getShort(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==byte[].class){
+            if (str.type == byte[].class) {
                 try {
                     o.getClass().getField(str.fieldName).set(o, c.getBlob(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==byte.class){
+            if (str.type == byte.class) {
                 try {
                     o.getClass().getField(str.fieldName).setByte(o, (byte) c.getLong(i));
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==Integer.class){
+            if (str.type == Integer.class) {
                 try {
-                    int ii=c.getInt(i);
+                    int ii = c.getInt(i);
                     o.getClass().getField(str.fieldName).set(o, ii);
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
             ////////
-            if (str.type ==Double.class){
+            if (str.type == Double.class) {
                 try {
-                    Double d=c.getDouble(i);
-                    o.getClass().getField(str.fieldName).set(o,d );
+                    Double d = c.getDouble(i);
+                    o.getClass().getField(str.fieldName).set(o, d);
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==Float.class){
+            if (str.type == Float.class) {
                 try {
-                    Float f=c.getFloat(i);
+                    Float f = c.getFloat(i);
                     o.getClass().getField(str.fieldName).set(o, f);
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==Long.class){
+            if (str.type == Long.class) {
                 try {
-                    Long l=c.getLong(i);
+                    Long l = c.getLong(i);
                     o.getClass().getField(str.fieldName).set(o, l);
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==Short.class){
+            if (str.type == Short.class) {
                 try {
-                    Short sh=c.getShort(i);
-                    o.getClass().getField(str.fieldName).set(o,sh );
+                    Short sh = c.getShort(i);
+                    o.getClass().getField(str.fieldName).set(o, sh);
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
-            if (str.type ==boolean.class){
+            if (str.type == boolean.class) {
                 boolean val;
                 val = c.getInt(i) != 0;
                 try {
                     o.getClass().getField(str.fieldName).setBoolean(o, val);
                 } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -423,16 +521,17 @@ public class Configure implements ISession {
         try {
             o.getClass().getField(key.fieldName).set(o, c.getInt(c.getColumnIndex(key.columName)));
         } catch (Exception e) {
+            Loger.LogE(e.getMessage());
             e.printStackTrace();
         }
     }
 
     @Override
     public <T> T get(Class<T> tClass, Object id) {
-        cacheMetaDate d=CacheDictionary.getCacheMetaDate(tClass);
-        List<T> res= getList(tClass, d.keyColumn.columName + "=?", id);
-        if(res.size()==0) return null;
-        if(res.size()>1){
+        cacheMetaDate d = CacheDictionary.getCacheMetaDate(tClass);
+        List<T> res = getList(tClass, d.keyColumn.columName + "=?", id);
+        if (res.size() == 0) return null;
+        if (res.size() > 1) {
             try {
                 throw new Exception("more than one- Error data");
             } catch (Exception e) {
@@ -443,9 +542,9 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> Object executeScalar(String sql,Object ... objects) {
+    public <T> Object executeScalar(String sql, Object... objects) {
         List<String> arrayList = new ArrayList<>();
-        String[] array =null;
+        String[] array = null;
         if(objects!=null&&objects.length>0){
             for (Object object : objects) {
                 arrayList.add(String.valueOf(object));
@@ -453,25 +552,26 @@ public class Configure implements ISession {
             array = new String[arrayList.size()];
             arrayList.toArray(array);
         }
+        Loger.LogI(sql);
         return InnerListExe(sql, array);
     }
 
     @Override
-    public void execSQL(String sql, Object ... objects) {
+    public void execSQL(String sql, Object... objects) {
         List<String> arrayList = new ArrayList<>();
         String[] array;
-        if(objects!=null&&objects.length>0){
+        if (objects != null && objects.length > 0) {
             for (Object object : objects) {
                 arrayList.add(String.valueOf(object));
             }
             array = new String[arrayList.size()];
             arrayList.toArray(array);
-            sqLiteDatabaseForWritable.execSQL(sql,array);
-        }else{
+            sqLiteDatabaseForWritable.execSQL(sql, array);
+        } else {
             sqLiteDatabaseForWritable.execSQL(sql);
         }
+        Loger.LogI(sql);
     }
-
 
     @Override
     public void beginTransaction() {
@@ -490,111 +590,46 @@ public class Configure implements ISession {
 
     @Override
     public void close() {
-     myDbHelper.close();
+        myDbHelper.close();
+        Loger.LogI("Close");
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    private Object InnerListExe(String sql, String[] strings){
+    private Object InnerListExe(String sql, String[] strings) {
         Cursor c;
-        if(strings==null){
-            c=sqLiteDatabaseForReadable.rawQuery(sql,null);
-        }else
-        {
-            c=sqLiteDatabaseForReadable.rawQuery(sql,strings);
+        if (strings == null) {
+            c = sqLiteDatabaseForReadable.rawQuery(sql, null);
+        } else {
+            c = sqLiteDatabaseForReadable.rawQuery(sql, strings);
         }
         if (c != null) {
-            try{
+            try {
                 if (c.moveToFirst()) {
                     do {
-                        int i= c.getType(0);
-                        if(i==0){
+                        int i = c.getType(0);
+                        if (i == 0) {
                             return null;
                         }
-                        if(i==1){
+                        if (i == 1) {
                             return c.getInt(0);
                         }
-                        if(i==2){
+                        if (i == 2) {
                             return c.getFloat(0);
                         }
-                        if(i==3){
+                        if (i == 3) {
                             return c.getString(0);
                         }
-                        if(i==4){
+                        if (i == 4) {
                             return c.getBlob(0);
                         }
                     } while (c.moveToNext());
 
                 }
-            }finally {
+            } finally {
                 c.close();
             }
         }
         return null;
-    }
-
-    public static void createBase(String path) {
-        File f = new File(path);
-        if(f.exists()) return;
-        f.getParentFile().mkdirs();
-        try {
-            f.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    static String pizdaticusKey(ItemField field){
-        if(field.type==double.class||field.type==float.class||field.type==Double.class||field.type==Float.class){
-            return " REAL ";
-        }
-        if(field.type==int.class||field.type==long.class||field.type==short.class||field.type==byte.class||field.type==Integer.class||
-                field.type==Long.class||field.type==Short.class||field.type==Byte.class){
-            return " INTEGER ";
-        }
-        if(field.type==String.class){
-            return " TEXT ";
-        }
-        if(field.type==boolean.class){
-            return " BOOL ";
-        }
-        return "";
-    }
-    static String pizdaticusField(ItemField field){
-        if(field.type==double.class||field.type==float.class||field.type==Double.class||field.type==Float.class){
-            return " REAL DEFAULT 0, ";
-        }
-        if(field.type==int.class||field.type==Enum.class||field.type==long.class||field.type==short.class||field.type==byte.class||field.type==Integer.class||
-                field.type==Long.class||field.type==Short.class){
-            return " INTEGER DEFAULT 0, ";
-        }
-        if(field.type==String.class){
-            return " TEXT, ";
-        }
-        if(field.type==boolean.class||field.type==Boolean.class){
-            return " BOOL DEFAULT 0, ";
-        }
-
-        if(field.type==byte[].class){
-            return " BLOB, ";
-        }
-        return "";
-    }
-
-    public static void createTable(Class<?> aClass) {
-        cacheMetaDate date=  CacheDictionary.getCacheMetaDate(aClass);
-        StringBuilder sb=new StringBuilder("CREATE TABLE "+date.tableName+" (" );
-        sb.append(date.keyColumn.columName).append(" ");
-        sb.append(pizdaticusKey(date.keyColumn));
-        sb.append("PRIMARY KEY, ");
-        for ( Object f : date.listColumn) {
-            ItemField ff= (ItemField) f;
-            sb.append(ff.columName);
-            sb.append(pizdaticusField(ff));
-        }
-        String s=sb.toString().trim();
-        String ss=s.substring(0,s.length()-1);
-        String sql=ss+")";
-        Configure.getSession().execSQL(sql,null);
     }
 
 //    public static void createTable(List<Class<?>> aClassL){

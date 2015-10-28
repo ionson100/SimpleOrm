@@ -16,8 +16,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
 
 
-    private static String DB_PATH = "";
     private static final SQLiteDatabase myDataBase=null;
+    private static String DB_PATH = "";
     private static Context mContext;
 
     public DataBaseHelper(Context context,String databasePath) {
@@ -35,6 +35,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             try {
                 copyDataBase();
             } catch (IOException e) {
+                Loger.LogE(e.getMessage());
                 throw new Error("Error copying database");
             }
         }
