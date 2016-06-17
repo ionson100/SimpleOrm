@@ -5,13 +5,14 @@ import java.util.Hashtable;
 
 
 class CacheDictionary {
-    private static final Dictionary dic= new Hashtable();
-    public static  <T> cacheMetaDate getCacheMetaDate(Class<T> aClass){
-        cacheMetaDate g = (cacheMetaDate) dic.get(aClass.getName());
-        if(g==null){
-           g= new cacheMetaDate<>(aClass);
+    private static final Dictionary dic = new Hashtable();
 
-            dic.put(aClass.getName(),g);
+    public static <T> cacheMetaDate getCacheMetaDate(Class<T> aClass) {
+        cacheMetaDate g = (cacheMetaDate) dic.get(aClass.getName());
+        if (g == null) {
+            g = new cacheMetaDate<>(aClass);
+
+            dic.put(aClass.getName(), g);
         }
         return g;
     }

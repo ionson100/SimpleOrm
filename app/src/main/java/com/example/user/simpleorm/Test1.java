@@ -5,28 +5,29 @@ import orm.IActionOrm;
 import orm.PrimaryKey;
 import orm.Table;
 
-@Table(name = "test1")
-public class Test1 implements IActionOrm<Test1>{
-    @PrimaryKey(name = "id")
+@Table("test1")
+public class Test1 implements IActionOrm<Test1> {
+    @PrimaryKey("id")
     public int id;
 
-    @Column(name = "name")
+    @Column("name")
     public  String name;
 
-    @Column(name = "longs")
+    @Column("longs")
     public long longs;
 
-    @Column(name = "inte")
+    @Column("inte")
     public Integer inte;
 
-    @Column(name = "ashort")
+    @Column("ashort")
     public short aShort;
 
-    @Column(name = "abyte")
+    @Column("abyte")
     public byte aByte;
 
-    @Column(name = "ablob")
+    @Column("ablob")
     public byte[] aBlob;
+
 
     @Override
     public void actionBeforeUpdate(Test1 test1) {
@@ -41,13 +42,11 @@ public class Test1 implements IActionOrm<Test1>{
     @Override
     public void actionBeforeInsert(Test1 test1) {
 
-        String dd= test1.name;
     }
 
     @Override
     public void actionAfterInsert(Test1 test1) {
 
-        int id= test1.id;
     }
 
     @Override

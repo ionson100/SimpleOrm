@@ -3,7 +3,7 @@ package orm;
 import android.util.Log;
 
 
-public class Loger {
+class Loger {
     public static boolean isWrite = true;
 
     public static void LogE(String msg) {

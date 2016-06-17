@@ -10,17 +10,18 @@ import android.os.Build;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Configure implements ISession {
     // static Connection c = null;
-    public static   String dataBaseName;
-    public static  DataBaseHelper    myDbHelper ;
-    private static boolean reloadBase=false;
+    public static String dataBaseName;
+    private static DataBaseHelper myDbHelper;
+    private static boolean reloadBase = false;
 
-    private SQLiteDatabase sqLiteDatabaseForReadable=null;
-    private SQLiteDatabase sqLiteDatabaseForWritable=null;
+    private SQLiteDatabase sqLiteDatabaseForReadable = null;
+    private SQLiteDatabase sqLiteDatabaseForWritable = null;
 
 
     private Configure() {
@@ -30,7 +31,8 @@ public class Configure implements ISession {
         sqLiteDatabaseForWritable = GetSqLiteDatabaseForWritable();
     }
 
-    public Configure(String dataBaseName, Context context, boolean reloadBase, boolean isWriteLog) {
+
+    public Configure(String dataBaseName, Context context, boolean isWriteLog,boolean reloadBase) {
         Configure.reloadBase = reloadBase;
         Loger.isWrite = isWriteLog;
         new Configure(dataBaseName, context);
@@ -47,7 +49,7 @@ public class Configure implements ISession {
                 myDbHelper.copyDataBase();
             } catch (IOException e) {
                 Loger.LogE(e.getMessage());
-                throw new Error("Error copying database -" + e.getMessage());
+                throw new Error("MError copying database -" + e.getMessage());
             }
         } else {
             if (!myDbHelper.checkDataBase()) {
@@ -68,10 +70,16 @@ public class Configure implements ISession {
     }
 
     private static SQLiteDatabase GetSqLiteDatabaseForReadable() throws SQLException {
-        return myDbHelper.openDataBaseForReadable();
+        try {
+            return myDbHelper.openDataBaseForReadable();
+        } catch (Exception ex) {
+            return null;
+        }
+
     }
 
     private static SQLiteDatabase GetSqLiteDatabaseForWritable() throws SQLException {
+
         return myDbHelper.openDataBaseForWritable();
     }
 
@@ -87,7 +95,7 @@ public class Configure implements ISession {
         }
     }
 
-    static String pizdaticusKey(ItemField field) {
+    private static String pizdaticusKey(ItemField field) {
         if (field.type == double.class || field.type == float.class || field.type == Double.class || field.type == Float.class) {
             return " REAL ";
         }
@@ -104,7 +112,7 @@ public class Configure implements ISession {
         return "";
     }
 
-    static String pizdaticusField(ItemField field) {
+    private static String pizdaticusField(ItemField field) {
         if (field.type == double.class || field.type == float.class || field.type == Double.class || field.type == Float.class) {
             return " REAL DEFAULT 0, ";
         }
@@ -139,36 +147,45 @@ public class Configure implements ISession {
         String s = sb.toString().trim();
         String ss = s.substring(0, s.length() - 1);
         String sql = ss + ")";
-        Configure.getSession().execSQL(sql, null);
+        Configure.getSession().execSQL(sql);
     }
 
     @Override
-    public <T> int update(T item)  {
-        SQLiteDatabase con=sqLiteDatabaseForWritable;
-        cacheMetaDate d= CacheDictionary.getCacheMetaDate(item.getClass());
-        ContentValues values = getContentValues(item, d);
-        Object key=null;
+    public <T> int update(T item) {
+        SQLiteDatabase con = sqLiteDatabaseForWritable;
+        cacheMetaDate d = CacheDictionary.getCacheMetaDate(item.getClass());
+        ContentValues values = null;
         try {
-            key= item.getClass().getField(d.keyColumn.fieldName).get(item);
+            values = getContentValues(item, d);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        Object key = null;
+        try {
+            Field field=d.keyColumn.field;
+            field.setAccessible(true);
+            key = field.get(item);
         } catch (Exception e) {
             Loger.LogE(e.getMessage());
             e.printStackTrace();
         }
         assert key != null;
-        if(d.isIAction()){
-            ((IActionOrm)item).actionBeforeUpdate(item);
+        if (d.isIAction()) {
+            ((IActionOrm) item).actionBeforeUpdate(item);
         }
-        int i= con.update(d.tableName, values, d.keyColumn.columName + " = ?",new String[]{key.toString()} );
-        if(i==-1){
+        int i = con.update(d.tableName, values, d.keyColumn.columName + " = ?", new String[]{key.toString()});
+        if (i == -1) {
             try {
+
                 throw new Exception("Not Update");
             } catch (Exception e) {
                 Loger.LogE(e.getMessage());
                 e.printStackTrace();
+                throw new RuntimeException("ORM simple update - " + e.getMessage());
             }
-        }else{
-            if(d.isIAction()){
-                ((IActionOrm)item).actionAfterUpdate(item);
+        } else {
+            if (d.isIAction()) {
+                ((IActionOrm) item).actionAfterUpdate(item);
             }
         }
         return i;
@@ -176,139 +193,151 @@ public class Configure implements ISession {
 
     @Override
     public <T> int insert(T item) {
-        SQLiteDatabase con=sqLiteDatabaseForWritable;
-        cacheMetaDate d= CacheDictionary.getCacheMetaDate(item.getClass());
-        ContentValues values = getContentValues(item, d);
-        if(d.isIAction()){
-            ((IActionOrm)item).actionBeforeInsert(item);
+
+        SQLiteDatabase con = sqLiteDatabaseForWritable;
+        cacheMetaDate d = CacheDictionary.getCacheMetaDate(item.getClass());
+        ContentValues values = null;
+        try {
+            values = getContentValues(item, d);
+        } catch (NoSuchFieldException e) {
+
+            throw  new RuntimeException(e.getMessage());
+          //  e.printStackTrace();
         }
-        int i= (int) con.insert(d.tableName,null,values);
-        if(i==-1){
+        if (d.isIAction()) {
+            ((IActionOrm) item).actionBeforeInsert(item);
+        }
+        int i = (int) con.insert(d.tableName, null, values);
+        if (i == -1) {
             try {
                 throw new Exception("Not insert");
             } catch (Exception e) {
                 Loger.LogE(e.getMessage());
                 e.printStackTrace();
             }
-        }else{
-            if(d.isIAction()){
-                ((IActionOrm)item).actionAfterInsert(item);
+        } else {
+            if (d.isIAction()) {
+                ((IActionOrm) item).actionAfterInsert(item);
             }
         }
         try {
-            item.getClass().getField(d.keyColumn.fieldName).set(item,i);
+            d.keyColumn.field.setAccessible(true);
+            d.keyColumn.field.set(item,i);
+//            Field field=item.getClass().getDeclaredField(d.keyColumn.fieldName);
+//            field.setAccessible(true);
+//            field.set(item, i);
         } catch (Exception e) {
             Loger.LogE(e.getMessage());
-            e.printStackTrace();
+            new RuntimeException("ORM insert ---" + e.getMessage());
         }
-        return  i;
+        return i;
     }
 
-    private <T> ContentValues getContentValues(T item, cacheMetaDate<?> d) {
+    private <T> ContentValues getContentValues(T item, cacheMetaDate<?> d) throws NoSuchFieldException {
         ContentValues values = new ContentValues();
         for (ItemField str : d.listColumn) {
-            if(str.type==String.class)
+            Field field= str.field;//item.getClass().getDeclaredField(str.fieldName);
+            field.setAccessible(true);
+
+            if (str.type == String.class)
                 try {
-                    values.put(str.columName, (String) item.getClass().getField(str.fieldName).get(item));
+
+                    values.put(str.columName, (String) field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
-            if(str.type==int.class)
+            if (str.type == int.class)
                 try {
-                    values.put(str.columName, (int) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (int)  field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
-            if(str.type==long.class)
+            if (str.type == long.class)
                 try {
-                    values.put(str.columName, (long) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (long) field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
-            if(str.type==short.class)
+            if (str.type == short.class)
                 try {
-                    values.put(str.columName, (short) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (short) field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
-            if(str.type==byte.class)
+            if (str.type == byte.class)
                 try {
-                    values.put(str.columName, (byte) item.getClass().getField(str.fieldName).get(item));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
-
-            if(str.type==Short.class)
-                try {
-                    values.put(str.columName, (Short) item.getClass().getField(str.fieldName).get(item));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
-            if(str.type==Long.class)
-                try {
-                    values.put(str.columName, (Long) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (byte) field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
-            if(str.type==Integer.class)
+            if (str.type == Short.class)
                 try {
-                    values.put(str.columName, (Integer) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (Short) field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
-            if(str.type==Double.class)
+            if (str.type == Long.class)
                 try {
-                    values.put(str.columName, (Double) item.getClass().getField(str.fieldName).get(item));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
-
-            if(str.type==Float.class)
-                try {
-                    values.put(str.columName, (Float) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (Long)    field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
-
-
-
-
-
-            if(str.type==byte[].class)
+            if (str.type == Integer.class)
                 try {
-                    values.put(str.columName, (byte[]) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (Integer) field.get(item));
+                } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
+                    e.printStackTrace();
+                }
+            if (str.type == Double.class)
+                try {
+                    values.put(str.columName, (Double)  field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
-            if(str.type==double.class)
+            if (str.type == Float.class)
                 try {
-                    values.put(str.columName, (double) item.getClass().getField(str.fieldName).get(item));
+                    values.put(str.columName, (Float)   field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
                     e.printStackTrace();
                 }
 
-            if(str.type==boolean.class)
+
+            if (str.type == byte[].class)
                 try {
-                    boolean val= (boolean) item.getClass().getField(str.fieldName).get(item);
-                    if(val){
+                    values.put(str.columName, (byte[]) field.get(item));
+                } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
+                    e.printStackTrace();
+                }
+
+            if (str.type == double.class)
+                try {
+                    values.put(str.columName, (double)   field.get(item));
+                } catch (Exception e) {
+                    Loger.LogE(e.getMessage());
+                    e.printStackTrace();
+                }
+
+            if (str.type == boolean.class)
+                try {
+                    boolean val = (boolean) field.get(item);
+                    if (val) {
                         values.put(str.columName, 1);
-                    }else{
+                    } else {
                         values.put(str.columName, 0);
                     }
 
@@ -322,230 +351,181 @@ public class Configure implements ISession {
 
     @Override
     public <T> int delete(T item) {
-        SQLiteDatabase con=sqLiteDatabaseForWritable;
+        SQLiteDatabase con = sqLiteDatabaseForWritable;
         cacheMetaDate d = CacheDictionary.getCacheMetaDate(item.getClass());
 
-        Object key=null;
+        Object key = null;
         try {
-            key= item.getClass().getField(d.keyColumn.fieldName).get(item);
+            Field field=d.keyColumn.field;//item.getClass().getDeclaredField(d.keyColumn.fieldName);
+            field.setAccessible(true);
+            key = field.get(item);
         } catch (Exception e) {
             Loger.LogE(e.getMessage());
             e.printStackTrace();
+            throw new RuntimeException("ORM simple dlete - " + e.getMessage());
         }
         assert key != null;
-        if(d.isIAction()){
-            ((IActionOrm)item).actionBeforeDelete(item);
+        if (d.isIAction()) {
+            ((IActionOrm) item).actionBeforeDelete(item);
         }
-        int res= con.delete(d.tableName,d.keyColumn.columName+"=?",new String[]{key.toString()});
-        if(res!=0){
-            if(d.isIAction()){
-                ((IActionOrm)item).actionAfterDelete(item);
+        int res = con.delete(d.tableName, d.keyColumn.columName + "=?", new String[]{key.toString()});
+        if (res != 0) {
+            if (d.isIAction()) {
+                ((IActionOrm) item).actionAfterDelete(item);
             }
         } else {
             Loger.LogE("Not Delete");
         }
-        return  res;
+        return res;
     }
 
     @Override
-    public <T> List<T> getList(Class<T> tClass, String where, Object... objects)  {
-        List<T> list=new ArrayList<>();
+    public <T> List<T> getList(Class<T> tClass, String where, Object... objects) {
+        List<T> list = new ArrayList<>();
         SQLiteDatabase con;
         try {
-            con=sqLiteDatabaseForReadable;
-            cacheMetaDate d=CacheDictionary.getCacheMetaDate(tClass);
-            Cursor c=null;
-            if(where==null&& objects ==null) {
-                String[] li=d.getStringSelect();
-                c = con.query(d.tableName,li,null,null,null, null,null,null);
+            con = sqLiteDatabaseForReadable;
+            cacheMetaDate d = CacheDictionary.getCacheMetaDate(tClass);
+            Cursor c = null;
+            String[] sdd = d.getStringSelect();
+            if (where == null && objects == null||where == null && objects.length==0) {
+
+                c = con.query(d.tableName, sdd, null, null, null, null, null, null);
+            }else if (where != null && objects == null||where != null && objects.length==0) {
+                c = con.query(d.tableName, sdd, where, null, null, null, null, null);
             }
-            String[] sdd=d.getStringSelect();
-            if(where!=null&& objects ==null) {
-                c = con.query(d.tableName,sdd,where,null,null, null,null,null);
-            }
-            if(where!=null&& objects !=null) {
-                String[] lstr=new String[objects.length];
-                for (int i=0;i< objects.length;i++){
-                    lstr[i]=String.valueOf(objects[i]);
+
+
+            if (where != null && objects != null) {
+                String[] lstr = new String[objects.length];
+                for (int i = 0; i < objects.length; i++) {
+                    lstr[i] = String.valueOf(objects[i]);
                 }
-                c = con.query(d.tableName,sdd,where,lstr,null, null,null,null);
+                c = con.query(d.tableName, sdd, where, lstr, null, null, null, null);
             }
             if (c != null) {
-                try{
+                try {
                     if (c.moveToFirst()) {
                         do {
                             Object sd = tClass.newInstance();
-                            Companaund(d.listColumn,d.keyColumn, c, sd);
+                            Companaund(d.listColumn, d.keyColumn, c, sd);
                             list.add((T) sd);
                         } while (c.moveToNext());
                     }
-                }finally {
+                } finally {
                     c.close();
                 }
             }
         } catch (SQLException e) {
-            Loger.LogE(e.getMessage());
-            e.printStackTrace();
+            //Loger.LogE(e.getMessage());
+            new RuntimeException("ORM getList ---" + e.getMessage());
             return null;
         } catch (Exception e) {
-            Loger.LogE(e.getMessage());
-            e.printStackTrace();
+            //Loger.LogE(e.getMessage());
+            new RuntimeException("ORM getList---" + e.getMessage());
         }
         return list;
     }
 
-    private void Companaund(List<ItemField> listIf, ItemField key, Cursor c, Object o)  {
+    private void Companaund(List<ItemField> listIf, ItemField key, Cursor c, Object o) throws NoSuchFieldException, IllegalAccessException {
         for (ItemField str : listIf) {
             int i = c.getColumnIndex(str.columName);
-            if (str.type ==int.class){
-                try {
-                    o.getClass().getField(str.fieldName).setInt(o,c.getInt(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+            Field res=  str.field;// o.getClass().getDeclaredField(str.fieldName);
+            res.setAccessible(true);
+            if (str.type == int.class) {
+                    res.setInt(o, c.getInt(i));
             }
             if (str.type == String.class) {
-                try {
-                    o.getClass().getField(str.fieldName).set(o, c.getString(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, c.getString(i));
             }
             if (str.type == double.class) {
-                try {
-                    o.getClass().getField(str.fieldName).setDouble(o, c.getDouble(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.setDouble(o, c.getDouble(i));
             }
             if (str.type == float.class) {
-                try {
-                    o.getClass().getField(str.fieldName).setFloat(o, c.getFloat(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.setFloat(o, c.getFloat(i));
             }
             if (str.type == long.class) {
-                try {
-                    o.getClass().getField(str.fieldName).setLong(o, c.getLong(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.setLong(o, c.getLong(i));
             }
             if (str.type == short.class) {
-                try {
-                    o.getClass().getField(str.fieldName).setShort(o, c.getShort(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.setShort(o, c.getShort(i));
             }
             if (str.type == byte[].class) {
-                try {
-                    o.getClass().getField(str.fieldName).set(o, c.getBlob(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, c.getBlob(i));
             }
             if (str.type == byte.class) {
-                try {
-                    o.getClass().getField(str.fieldName).setByte(o, (byte) c.getLong(i));
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.setByte(o, (byte) c.getLong(i));
             }
             if (str.type == Integer.class) {
-                try {
                     int ii = c.getInt(i);
-                    o.getClass().getField(str.fieldName).set(o, ii);
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, ii);
             }
             ////////
             if (str.type == Double.class) {
-                try {
                     Double d = c.getDouble(i);
-                    o.getClass().getField(str.fieldName).set(o, d);
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, d);
             }
             if (str.type == Float.class) {
-                try {
                     Float f = c.getFloat(i);
-                    o.getClass().getField(str.fieldName).set(o, f);
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, f);
             }
             if (str.type == Long.class) {
-                try {
                     Long l = c.getLong(i);
-                    o.getClass().getField(str.fieldName).set(o, l);
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, l);
             }
             if (str.type == Short.class) {
-                try {
                     Short sh = c.getShort(i);
-                    o.getClass().getField(str.fieldName).set(o, sh);
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.set(o, sh);
             }
             if (str.type == boolean.class) {
                 boolean val;
                 val = c.getInt(i) != 0;
-                try {
-                    o.getClass().getField(str.fieldName).setBoolean(o, val);
-                } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
-                }
+                    res.setBoolean(o, val);
             }
         }
         try {
-            o.getClass().getField(key.fieldName).set(o, c.getInt(c.getColumnIndex(key.columName)));
+            Field field=key.field;
+            field.setAccessible(true);
+           field.set(o, c.getInt(c.getColumnIndex(key.columName)));
         } catch (Exception e) {
-            Loger.LogE(e.getMessage());
-            e.printStackTrace();
+            throw new RuntimeException("orm get id"+e.getMessage());
         }
+    }
+
+    private boolean containInterface(Class<?>[] classes){
+        for (Class<?> aClass : classes) {
+            if(aClass==IUsingGuidId.class){
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public <T> T get(Class<T> tClass, Object id) {
         cacheMetaDate d = CacheDictionary.getCacheMetaDate(tClass);
-        List<T> res = getList(tClass, d.keyColumn.columName + "=?", id);
+        List<T> res;
+        if(containInterface(tClass.getInterfaces())&& id instanceof String){
+            if(id==null||id.toString().trim().length()==0){
+                return null;
+            }
+            res = getList(tClass, " idu = ? ",id.toString());
+        }else{
+            res = getList(tClass, d.keyColumn.columName + "=?", id);
+        }
+
         if (res.size() == 0) return null;
         if (res.size() > 1) {
-            try {
-                throw new Exception("more than one- Error data");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            throw new RuntimeException("orm (get) more than one");
         }
         return res.get(0);
     }
 
     @Override
-    public <T> Object executeScalar(String sql, Object... objects) {
+    public Object executeScalar(String sql, Object... objects) {
         List<String> arrayList = new ArrayList<>();
         String[] array = null;
-        if(objects!=null&&objects.length>0){
+        if (objects != null && objects.length > 0) {
             for (Object object : objects) {
                 arrayList.add(String.valueOf(object));
             }
@@ -558,6 +538,7 @@ public class Configure implements ISession {
 
     @Override
     public void execSQL(String sql, Object... objects) {
+
         List<String> arrayList = new ArrayList<>();
         String[] array;
         if (objects != null && objects.length > 0) {
@@ -572,6 +553,13 @@ public class Configure implements ISession {
         }
         Loger.LogI(sql);
     }
+
+    @Override
+    public void deleteTable(String tableName){
+        sqLiteDatabaseForWritable.delete(tableName,null,null);
+    }
+
+
 
     @Override
     public void beginTransaction() {
@@ -623,7 +611,6 @@ public class Configure implements ISession {
                             return c.getBlob(0);
                         }
                     } while (c.moveToNext());
-
                 }
             } finally {
                 c.close();
@@ -632,21 +619,4 @@ public class Configure implements ISession {
         return null;
     }
 
-//    public static void createTable(List<Class<?>> aClassL){
-//        for (Class<?> aClass : aClassL) {
-//            createTable(aClass);
-//        }
-//    }
-
-//    public static void createTable(Class<?> aClass,Object o){
-//        createTable(aClass);
-//        Configure.getSession().insert(o);
-//    }
-
-//    public static void createTable(Class<?> aClass,List<Object> objectList){
-//        createTable(aClass);
-//        for (Object o : objectList) {
-//            Configure.getSession().insert(o);
-//        }
-//    }
 }
