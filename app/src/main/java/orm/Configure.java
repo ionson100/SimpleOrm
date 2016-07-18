@@ -8,6 +8,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -15,13 +16,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Configure implements ISession {
-    // static Connection c = null;
+
     public static String dataBaseName;
     private static DataBaseHelper myDbHelper;
     private static boolean reloadBase = false;
 
     private SQLiteDatabase sqLiteDatabaseForReadable = null;
     private SQLiteDatabase sqLiteDatabaseForWritable = null;
+
+    public static boolean isLive(){
+        return dataBaseName!=null&&myDbHelper!=null;
+    }
 
 
     private Configure() {
@@ -32,9 +37,8 @@ public class Configure implements ISession {
     }
 
 
-    public Configure(String dataBaseName, Context context, boolean isWriteLog,boolean reloadBase) {
+    public Configure(String dataBaseName, Context context, boolean reloadBase) {
         Configure.reloadBase = reloadBase;
-        Loger.isWrite = isWriteLog;
         new Configure(dataBaseName, context);
     }
 
@@ -48,7 +52,6 @@ public class Configure implements ISession {
             try {
                 myDbHelper.copyDataBase();
             } catch (IOException e) {
-                Loger.LogE(e.getMessage());
                 throw new Error("MError copying database -" + e.getMessage());
             }
         } else {
@@ -70,12 +73,7 @@ public class Configure implements ISession {
     }
 
     private static SQLiteDatabase GetSqLiteDatabaseForReadable() throws SQLException {
-        try {
             return myDbHelper.openDataBaseForReadable();
-        } catch (Exception ex) {
-            return null;
-        }
-
     }
 
     private static SQLiteDatabase GetSqLiteDatabaseForWritable() throws SQLException {
@@ -90,8 +88,7 @@ public class Configure implements ISession {
         try {
             f.createNewFile();
         } catch (IOException e) {
-            Loger.LogE(e.getMessage());
-            e.printStackTrace();
+            throw  new RuntimeException(" orm create base :"+e.getMessage());
         }
     }
 
@@ -158,7 +155,7 @@ public class Configure implements ISession {
         try {
             values = getContentValues(item, d);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         }
         Object key = null;
         try {
@@ -175,14 +172,7 @@ public class Configure implements ISession {
         }
         int i = con.update(d.tableName, values, d.keyColumn.columName + " = ?", new String[]{key.toString()});
         if (i == -1) {
-            try {
-
-                throw new Exception("Not Update");
-            } catch (Exception e) {
-                Loger.LogE(e.getMessage());
-                e.printStackTrace();
-                throw new RuntimeException("ORM simple update - " + e.getMessage());
-            }
+            throw new RuntimeException("ORM simple update -  res=-1");
         } else {
             if (d.isIAction()) {
                 ((IActionOrm) item).actionAfterUpdate(item);
@@ -200,9 +190,7 @@ public class Configure implements ISession {
         try {
             values = getContentValues(item, d);
         } catch (NoSuchFieldException e) {
-
             throw  new RuntimeException(e.getMessage());
-          //  e.printStackTrace();
         }
         if (d.isIAction()) {
             ((IActionOrm) item).actionBeforeInsert(item);
@@ -212,8 +200,7 @@ public class Configure implements ISession {
             try {
                 throw new Exception("Not insert");
             } catch (Exception e) {
-                Loger.LogE(e.getMessage());
-                e.printStackTrace();
+                throw new RuntimeException(e.getMessage());
             }
         } else {
             if (d.isIAction()) {
@@ -223,11 +210,7 @@ public class Configure implements ISession {
         try {
             d.keyColumn.field.setAccessible(true);
             d.keyColumn.field.set(item,i);
-//            Field field=item.getClass().getDeclaredField(d.keyColumn.fieldName);
-//            field.setAccessible(true);
-//            field.set(item, i);
         } catch (Exception e) {
-            Loger.LogE(e.getMessage());
             new RuntimeException("ORM insert ---" + e.getMessage());
         }
         return i;
@@ -244,67 +227,59 @@ public class Configure implements ISession {
 
                     values.put(str.columName, (String) field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
             if (str.type == int.class)
                 try {
                     values.put(str.columName, (int)  field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
             if (str.type == long.class)
                 try {
                     values.put(str.columName, (long) field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
             if (str.type == short.class)
                 try {
                     values.put(str.columName, (short) field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
             if (str.type == byte.class)
                 try {
                     values.put(str.columName, (byte) field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
             if (str.type == Short.class)
                 try {
                     values.put(str.columName, (Short) field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
             if (str.type == Long.class)
                 try {
                     values.put(str.columName, (Long)    field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
             if (str.type == Integer.class)
                 try {
                     values.put(str.columName, (Integer) field.get(item));
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
             if (str.type == Double.class)
                 try {
                     values.put(str.columName, (Double)  field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
             if (str.type == Float.class)
@@ -312,7 +287,7 @@ public class Configure implements ISession {
                     values.put(str.columName, (Float)   field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
 
@@ -321,7 +296,7 @@ public class Configure implements ISession {
                     values.put(str.columName, (byte[]) field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
             if (str.type == double.class)
@@ -329,7 +304,7 @@ public class Configure implements ISession {
                     values.put(str.columName, (double)   field.get(item));
                 } catch (Exception e) {
                     Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
 
             if (str.type == boolean.class)
@@ -342,8 +317,7 @@ public class Configure implements ISession {
                     }
 
                 } catch (Exception e) {
-                    Loger.LogE(e.getMessage());
-                    e.printStackTrace();
+                    throw new RuntimeException(e.getMessage());
                 }
         }
         return values;
@@ -361,7 +335,7 @@ public class Configure implements ISession {
             key = field.get(item);
         } catch (Exception e) {
             Loger.LogE(e.getMessage());
-            e.printStackTrace();
+
             throw new RuntimeException("ORM simple dlete - " + e.getMessage());
         }
         assert key != null;
@@ -374,7 +348,7 @@ public class Configure implements ISession {
                 ((IActionOrm) item).actionAfterDelete(item);
             }
         } else {
-            Loger.LogE("Not Delete");
+            throw new RuntimeException(" orm not delete"+item.getClass().getName());
         }
         return res;
     }
@@ -417,11 +391,9 @@ public class Configure implements ISession {
                 }
             }
         } catch (SQLException e) {
-            //Loger.LogE(e.getMessage());
             new RuntimeException("ORM getList ---" + e.getMessage());
             return null;
         } catch (Exception e) {
-            //Loger.LogE(e.getMessage());
             new RuntimeException("ORM getList---" + e.getMessage());
         }
         return list;
@@ -579,7 +551,6 @@ public class Configure implements ISession {
     @Override
     public void close() {
         myDbHelper.close();
-        Loger.LogI("Close");
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)

@@ -59,39 +59,6 @@ class cacheMetaDate<T> {
 
 
 
-     String getValueBulkString(String stringColumn, List<String> stringValue) {
-        String[] col=stringColumn.split(",");
-        StringBuilder sb=new StringBuilder();
-        for (int i=0;i<col.length;i++){
-            for (ItemField itemField : listColumn) {
-                if(itemField.columName.equals(col[i])){
-                    if(itemField.type==String.class){
-                        sb.append(" '").append(stringValue.get(i)).append("',");
-                    }else{
-                        sb.append(" ").append(stringValue.get(i)).append(",");
-                    }
-                }
-            }
-        }
-        return sb.substring(0, sb.lastIndexOf(","));
-    }
 
-     String resolver(String stringColumn, List<String> stringValue) {
-        StringBuilder sb=new StringBuilder(" select ");
-        String[] col=stringColumn.split(",");
-        for (int i=0;i<col.length;i++){
 
-            for (ItemField itemField : listColumn) {
-                if(itemField.columName.equals(col[i])){
-                    if(itemField.type==String.class){
-                        sb.append(" '").append(stringValue.get(i)).append("' as ").append(col[i]).append(",");
-                    }else{
-                        sb.append(" ").append(stringValue.get(i)).append(" as ").append(col[i]).append(",");
-                    }
-                }
-            }
-
-        }
-        return sb.substring(0,sb.lastIndexOf(",")).toString()+" ";
-    }
 }

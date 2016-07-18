@@ -66,12 +66,17 @@ class AnotationOrm {
     }
     static void  getTableNameInner(Class clazz,Temp table){
 
-        if (clazz.isAnnotationPresent(Table.class)) {
-            table.name=((Table) clazz.getAnnotation(Table.class)).value();
-        }else{
-            Class superClazz = clazz.getSuperclass();
-            getTableNameInner( superClazz, table);
+        try{
+            if (clazz.isAnnotationPresent(Table.class)) {
+                table.name=((Table) clazz.getAnnotation(Table.class)).value();
+            }else{
+                Class superClazz = clazz.getSuperclass();
+                getTableNameInner( superClazz, table);
+            }
+        }catch (Exception e){
+            throw new RuntimeException(e);
         }
+
     }
 
 }
