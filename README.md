@@ -10,8 +10,9 @@ Quickstart
  new Configure(
                getApplicationInfo().dataDir + "/test_data.pdb", //path file data
                getBaseContext(),// current contex
-               true, // rewrite base file (debug)
-               true  // Write log
+               true  // you have to have assets test_data.sqlite base
+                     //true - at each start, it will be overwritten.
+                     //false - at the start, if it is not to be written, rewriting is not allowed
        );
 ```
 
@@ -60,6 +61,22 @@ public class Test1 implements IActionOrm<Test1>{
         if(dds==null){
             Configure.createTable(Test1.class);
         }
+   Test1 dd=new Test1();
+   dd.name="sdsdsd";
+   dd.longs=12132388;
+   dd.aShort=34;
+   dd.aByte=45;
+   byte[] rr=new byte[2];
+   rr[0]=3;
+   rr[1]=45;
+   dd.aBlob=rr;
+   dd.inte = 35;
+   Configure.getSession().insert(dd);
+   
+   List<Test1> test1List=Configure.getSession().getList(Test1.class,null);
+   List<Test1> test1List1=Configure.getSession().getList(Test1.class," id =? ",1);
+   Test1 test1=Configure.getSession().get(Test1.class,1);
+   int res= (int) Configure.getSession().executeScalar(" select count(*) from test1",null);
 ```
 
 ```java
