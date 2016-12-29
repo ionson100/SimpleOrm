@@ -1,22 +1,42 @@
 package orm;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteQuery;
 import android.util.Log;
 
+import com.example.user.omsk.BuildConfig;
 
-class Loger {
-    public static boolean isWrite = true;
+import java.lang.reflect.Field;
+
+
+public class Loger {
+    private final static boolean isWrite = BuildConfig.DEBUG;
 
     public static void LogE(String msg) {
         if (isWrite) {
-            Log.e("ORM", msg);
+            Log.e("____ORM____", msg);
         }
 
     }
 
     public static void LogI(String msg) {
         if (isWrite) {
-            Log.i("ORM", msg);
+            Log.i("____ORM____", msg);
         }
 
+    }
+
+    public static void printSql(Cursor cursor) {
+        if (isWrite) {
+            try {
+                Field[] dd = cursor.getClass().getDeclaredFields();
+                Field ddd = cursor.getClass().getDeclaredField("mQuery");
+                ddd.setAccessible(true);
+                SQLiteQuery v = (SQLiteQuery) ddd.get(cursor);
+                Loger.LogI(v.toString());
+            } catch (Exception ignored) {
+
+            }
+        }
     }
 }

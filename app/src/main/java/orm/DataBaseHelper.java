@@ -14,7 +14,7 @@ import java.io.OutputStream;
 class DataBaseHelper extends SQLiteOpenHelper {
 
 
-    private static final SQLiteDatabase myDataBase = null;
+    // private static final SQLiteDatabase myDataBase = null;
     private static String DB_PATH = "";
     private static Context mContext;
 
@@ -24,7 +24,6 @@ class DataBaseHelper extends SQLiteOpenHelper {
         DB_PATH = databasePath;
         mContext = context;
     }
-
 
 
     public void createDataBase() {
@@ -44,18 +43,18 @@ class DataBaseHelper extends SQLiteOpenHelper {
 
     public boolean checkDataBase() {
 
-        File f=new File(DB_PATH);
+        File f = new File(DB_PATH);
         return f.exists();
-      //  SQLiteDatabase checkDB = null;
-      //  try {
-      //      checkDB = SQLiteDatabase.openDatabase(DB_PATH, null, 1);
-      //  } catch (SQLiteException ignored) {
-      //      ignored.printStackTrace();
-      //  }
-      //  if (checkDB != null) {
-      //      checkDB.close();
-      //  }
-      //  return checkDB != null;// ? true : false;
+        //  SQLiteDatabase checkDB = null;
+        //  try {
+        //      checkDB = SQLiteDatabase.openDatabase(DB_PATH, null, 1);
+        //  } catch (SQLiteException ignored) {
+        //      ignored.printStackTrace();
+        //  }
+        //  if (checkDB != null) {
+        //      checkDB.close();
+        //  }
+        //  return checkDB != null;// ? true : false;
     }
 
 
@@ -84,16 +83,6 @@ class DataBaseHelper extends SQLiteOpenHelper {
         return this.getWritableDatabase();
     }
 
-    @Override
-    public synchronized void close() {
-        if (myDataBase != null)
-            myDataBase.close();
-        super.close();
-    }
-
-    public void Close() {
-        close();
-    }
 
     @Override
     public void onCreate(SQLiteDatabase db) {

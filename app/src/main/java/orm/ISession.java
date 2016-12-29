@@ -1,11 +1,16 @@
 package orm;
 
+import android.database.sqlite.SQLiteDatabase;
+
 import java.util.List;
 
 public interface ISession {
 
+    SQLiteDatabase getSqLiteDatabase();
 
     <T> int update(T item);
+
+    <T> int updateWhere(T item, String whereSql);
 
     <T> int insert(T item);
 
@@ -19,7 +24,7 @@ public interface ISession {
 
     void execSQL(String sql, Object... objects);
 
-  //  void execSQL(String sql);
+    //  void execSQL(String sql);
 
     void beginTransaction();
 
@@ -27,12 +32,11 @@ public interface ISession {
 
     void endTransaction();
 
-    void close();
+//    void close();
 
-    void deleteTable(String tableName);
+    int deleteTable(String tableName);
 
-
-
+    int deleteTable(String tableName, String where, Object... objects);
 
 
 }
