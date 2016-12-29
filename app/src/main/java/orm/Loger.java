@@ -4,13 +4,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteQuery;
 import android.util.Log;
 
-import com.example.user.omsk.BuildConfig;
+
 
 import java.lang.reflect.Field;
 
 
 public class Loger {
-    private final static boolean isWrite = BuildConfig.DEBUG;
+    private final static boolean isWrite = false;
 
     public static void LogE(String msg) {
         if (isWrite) {

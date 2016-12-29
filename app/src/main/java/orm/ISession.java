@@ -24,15 +24,11 @@ public interface ISession {
 
     void execSQL(String sql, Object... objects);
 
-    //  void execSQL(String sql);
-
     void beginTransaction();
 
     void commitTransaction();
 
     void endTransaction();
-
-//    void close();
 
     int deleteTable(String tableName);
 

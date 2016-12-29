@@ -5,7 +5,9 @@ import java.util.Hashtable;
 
 
 class CacheDictionary {
+
     private static final Object lock = new Object();
+
     private static final Dictionary<String, cacheMetaDate> dic = new Hashtable();
 
     public static cacheMetaDate getCacheMetaDate(Class aClass) {
