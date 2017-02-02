@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static java.lang.Boolean.parseBoolean;
+
 
 public class Configure implements ISession {
 
@@ -273,19 +275,19 @@ public class Configure implements ISession {
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e.getMessage());
         }
-//        if (d.isIAction()) {
-//            ((IActionOrm) item).actionBeforeInsert(item);
-//        }
+        if (d.isIAction()) {
+            ((IActionOrm) item).actionBeforeInsert(item);
+        }
         int i = (int) con.insert(d.tableName, null, values);
 
         if (i == -1) {
             throw new RuntimeException(" no insert record");
         }
-//        else {
-//            if (d.isIAction()) {
-//                ((IActionOrm) item).actionAfterInsert(item);
-//            }
-//        }
+        else {
+            if (d.isIAction()) {
+                ((IActionOrm) item).actionAfterInsert(item);
+            }
+        }
         try {
             d.keyColumn.field.setAccessible(true);
             d.keyColumn.field.set(item, i);
@@ -446,7 +448,7 @@ public class Configure implements ISession {
     private void Companaund(List<ItemField> listIf, ItemField key, Cursor c, Object o) throws NoSuchFieldException, IllegalAccessException {
         for (ItemField str : listIf) {
             int i = c.getColumnIndex(str.columnName);
-            Field res = str.field;// o.getClass().getDeclaredField(str.fieldName);
+            Field res = str.field;
             res.setAccessible(true);
 
 
@@ -485,25 +487,60 @@ public class Configure implements ISession {
                     res.setByte(o, (byte) c.getLong(i));
                 }
                 if (str.type == Integer.class) {
-                    Integer ii = c.getInt(i);
-                    res.set(o, ii);
+
+                    String temp =c.getString(i);
+                    if(temp==null){
+                        res.set(o, null);
+                    }else {
+                        Integer ii = c.getInt(i);
+                        res.set(o, ii);
+                    }
+
                 }
                 ////////
                 if (str.type == Double.class) {
-                    Double d = c.getDouble(i);
-                    res.set(o, d);
+                    String temp =c.getString(i);
+                    if(temp==null){
+                        res.set(o, null);
+                    }else {
+                        Double d = c.getDouble(i);
+                        res.set(o,d);
+                    }
+
+
                 }
                 if (str.type == Float.class) {
-                    Float f = c.getFloat(i);
-                    res.set(o, f);
+                    String temp =c.getString(i);
+                    if(temp==null){
+                        res.set(o, null);
+                    }else {
+                        Float f = c.getFloat(i);
+                        res.set(o, f);
+                    }
+
                 }
                 if (str.type == Long.class) {
-                    Long l = c.getLong(i);
-                    res.set(o, l);
+
+                    String temp =c.getString(i);
+                    if(temp==null){
+                        res.set(o, null);
+                    }else {
+                        Long l = c.getLong(i);
+                        res.set(o, l);
+                    }
+
                 }
                 if (str.type == Short.class) {
-                    Short sh = c.getShort(i);
-                    res.set(o, sh);
+
+                    String temp =c.getString(i);
+                    if(temp==null){
+                        res.set(o, null);
+                    }else {
+                        Short sh = c.getShort(i);
+                        res.set(o, sh);
+                    }
+
+
                 }
                 if (str.type == boolean.class) {
                     boolean val;
@@ -512,13 +549,14 @@ public class Configure implements ISession {
                 }
 
                 if (str.type == Boolean.class) {
-                    Integer val=c.getInt(i);
-                    if(val==null){
+                    String temp =c.getString(i);
+                    if(temp==null){
                         res.set(o, null);
                     }else {
-                        res.setBoolean(o, val==1);
+                        boolean val;
+                        val = c.getInt(i) != 0;
+                        res.setBoolean(o, val);
                     }
-
                 }
             }
         }
