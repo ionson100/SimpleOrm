@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static java.lang.Boolean.parseBoolean;
-
 
 public class Configure implements ISession {
 
@@ -31,46 +29,6 @@ public class Configure implements ISession {
         sqLiteDatabaseForReadable = GetSqLiteDatabaseForReadable();
         sqLiteDatabaseForWritable = GetSqLiteDatabaseForWritable();
     }
-
-    //////////////////////////////////////////////////// bulk
-    public static <T> void bulk(Class<T> tClass, List<T> tList, ISession ses) {
-
-        List<List<T>> sd = partition(tList, 500);
-        for (List<T> ts : sd) {
-            Configure.InsertBulk s = Configure.getInsertBulk(tClass);
-            for (T t : ts) {
-                s.add(t);
-            }
-            String sql = s.getSql();
-            if (sql != null) {
-                try {
-                    ses.execSQL(sql);
-                } catch (Exception ex) {
-                    int i = 0;
-                }
-            }
-        }
-    }
-    private static <T> List<List<T>> partition(Collection<T> members, int maxSize) {
-        List<List<T>> res = new ArrayList<>();
-
-        List<T> internal = new ArrayList<>();
-
-        for (T member : members) {
-            internal.add(member);
-
-            if (internal.size() == maxSize) {
-                res.add(internal);
-                internal = new ArrayList<>();
-            }
-        }
-        if (!internal.isEmpty()) {
-            res.add(internal);
-        }
-        return res;
-    }
-    /////////////////////////////////////////////////////////////////////
-
 
     public Configure(String dataBaseName, Context context, boolean reloadBase) {
         Configure.reloadBase = reloadBase;
@@ -94,13 +52,52 @@ public class Configure implements ISession {
 //        new Configure(dataBaseName, context);
     }
 
+    //////////////////////////////////////////////////// bulk
+    public static <T> void bulk(Class<T> tClass, List<T> tList, ISession ses) {
+
+        List<List<T>> sd = partition(tList, 500);
+        for (List<T> ts : sd) {
+            Configure.InsertBulk s = Configure.getInsertBulk(tClass);
+            for (T t : ts) {
+                s.add(t);
+            }
+            String sql = s.getSql();
+            if (sql != null) {
+                try {
+                    ses.execSQL(sql);
+                } catch (Exception ex) {
+                    int i = 0;
+                }
+            }
+        }
+    }
+    /////////////////////////////////////////////////////////////////////
+
+    private static <T> List<List<T>> partition(Collection<T> members, int maxSize) {
+        List<List<T>> res = new ArrayList<>();
+
+        List<T> internal = new ArrayList<>();
+
+        for (T member : members) {
+            internal.add(member);
+
+            if (internal.size() == maxSize) {
+                res.add(internal);
+                internal = new ArrayList<>();
+            }
+        }
+        if (!internal.isEmpty()) {
+            res.add(internal);
+        }
+        return res;
+    }
+
 
 //    private Configure(String dataBaseName, Context context) {
 //
 //
 //
 //    }
-
 
     public static boolean isLive() {
         return dataBaseName != null && myDbHelper != null;
@@ -194,6 +191,13 @@ public class Configure implements ISession {
         return new InsertBulk(aClass);
     }
 
+    //@Override
+    public static synchronized void close() {
+        if (myDbHelper != null) {
+            myDbHelper.close();
+        }
+    }
+
     @Override
     public <T> int update(T item) {
         SQLiteDatabase con = sqLiteDatabaseForWritable;
@@ -282,8 +286,7 @@ public class Configure implements ISession {
 
         if (i == -1) {
             throw new RuntimeException(" no insert record");
-        }
-        else {
+        } else {
             if (d.isIAction()) {
                 ((IActionOrm) item).actionAfterInsert(item);
             }
@@ -378,7 +381,6 @@ public class Configure implements ISession {
         return res;
     }
 
-
     private String wherower(String where, cacheMetaDate cacheMetaDate) {
         if (cacheMetaDate.where != null) {
             where = " " + cacheMetaDate.where.trim() + (where == null ? "" : " and " + where) + " ";
@@ -393,7 +395,7 @@ public class Configure implements ISession {
 
     @Override
     public <T> List<T> getList(Class<T> tClass, String where, Object... objects) {
-        List<T> list =null;
+        List<T> list = null;
         SQLiteDatabase con;
         try {
             con = sqLiteDatabaseForReadable;
@@ -422,7 +424,7 @@ public class Configure implements ISession {
             }
 
             if (c != null) {
-                list= new ArrayList<>(c.getCount());
+                list = new ArrayList<>(c.getCount());
                 Loger.printSql(c);
                 try {
                     if (c.moveToFirst()) {
@@ -525,7 +527,7 @@ public class Configure implements ISession {
                         val = c.getInt(i) != 0;
                         res.setBoolean(o, val);
                     }
-                }else {
+                } else {
                     new RuntimeException("Error orm set values");
                 }
             }
@@ -651,13 +653,6 @@ public class Configure implements ISession {
         myDbHelper.getWritableDatabase().endTransaction();
     }
 
-    //@Override
-    public static synchronized void close() {
-        if (myDbHelper != null) {
-            myDbHelper.close();
-        }
-    }
-
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private Object InnerListExe(String sql, String[] strings) {
         Cursor c;
@@ -717,42 +712,6 @@ public class Configure implements ISession {
 
         }
 
-        public void add(F o) {
-            it++;
-            sql.append("(");
-            for (int i = 0; i < metaDate.listColumn.size(); i++) {
-                ItemField f = (ItemField) metaDate.listColumn.get(i);
-                try {
-                    Object value = f.field.get(o);
-
-                    sql.append(getString(value, f.field.getType()));
-
-
-                    if (i < metaDate.listColumn.size() - 1) {
-                        sql.append(", ");
-                    } else {
-
-                    }
-
-
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("InsertBulk:" + e.getMessage());
-                }
-
-            }
-            sql.append(") ,");
-        }
-
-        String getSql() {
-            if (it == 0) {
-                return null;
-            } else {
-                return sql.toString().substring(0, sql.toString().lastIndexOf(",")).trim();
-            }
-
-        }
-
-
         private static <T> List<List<T>> partition(Collection<T> members, int maxSize) {
             List<List<T>> res = new ArrayList<>();
 
@@ -791,6 +750,41 @@ public class Configure implements ISession {
             }
         }
 
+        public void add(F o) {
+            it++;
+            sql.append("(");
+            for (int i = 0; i < metaDate.listColumn.size(); i++) {
+                ItemField f = (ItemField) metaDate.listColumn.get(i);
+                try {
+                    Object value = f.field.get(o);
+
+                    sql.append(getString(value, f.field.getType()));
+
+
+                    if (i < metaDate.listColumn.size() - 1) {
+                        sql.append(", ");
+                    } else {
+
+                    }
+
+
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("InsertBulk:" + e.getMessage());
+                }
+
+            }
+            sql.append(") ,");
+        }
+
+        String getSql() {
+            if (it == 0) {
+                return null;
+            } else {
+                return sql.toString().substring(0, sql.toString().lastIndexOf(",")).trim();
+            }
+
+        }
+
         private String getString(Object o, Class fClass) {
 
             if (fClass == String.class) {
@@ -799,7 +793,7 @@ public class Configure implements ISession {
                 } else {
                     return "'" + String.valueOf(o) + "'";
                 }
-            } else if ( fClass == boolean.class) {
+            } else if (fClass == boolean.class) {
 
                 if (o == null) {
                     return "0";
@@ -810,7 +804,7 @@ public class Configure implements ISession {
                         return "0";
                     }
                 }
-            } else if (fClass == Boolean.class ) {
+            } else if (fClass == Boolean.class) {
 
                 if (o == null) {
                     return "null";
@@ -821,17 +815,17 @@ public class Configure implements ISession {
                         return "0";
                     }
                 }
-            }else if (fClass == int.class ||
+            } else if (fClass == int.class ||
                     fClass == long.class ||
                     fClass == float.class ||
                     fClass == double.class ||
-                    fClass == short.class ) {
+                    fClass == short.class) {
                 if (o == null) {
                     return "0";
                 } else {
                     return String.valueOf(o);
                 }
-            }else if (fClass == Integer.class ||
+            } else if (fClass == Integer.class ||
                     fClass == Float.class ||
                     fClass == Double.class ||
                     fClass == Long.class ||
