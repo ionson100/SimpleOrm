@@ -464,99 +464,69 @@ public class Configure implements ISession {
             } else {
                 if (str.type == int.class) {
                     res.setInt(o, c.getInt(i));
-                }
-                if (str.type == String.class) {
+                } else if (str.type == String.class) {
                     res.set(o, c.getString(i));
-                }
-                if (str.type == double.class) {
+                } else if (str.type == double.class) {
                     res.setDouble(o, c.getDouble(i));
-                }
-                if (str.type == float.class) {
+                } else if (str.type == float.class) {
                     res.setFloat(o, c.getFloat(i));
-                }
-                if (str.type == long.class) {
+                } else if (str.type == long.class) {
                     res.setLong(o, c.getLong(i));
-                }
-                if (str.type == short.class) {
+                } else if (str.type == short.class) {
                     res.setShort(o, c.getShort(i));
-                }
-                if (str.type == byte[].class) {
+                } else if (str.type == byte[].class) {
                     res.set(o, c.getBlob(i));
-                }
-                if (str.type == byte.class) {
+                } else if (str.type == byte.class) {
                     res.setByte(o, (byte) c.getLong(i));
-                }
-                if (str.type == Integer.class) {
-
-                    String temp =c.getString(i);
-                    if(temp==null){
+                } else if (str.type == Integer.class) {
+                    if (c.isNull(i)) {
                         res.set(o, null);
-                    }else {
+                    } else {
                         Integer ii = c.getInt(i);
                         res.set(o, ii);
                     }
-
-                }
-                ////////
-                if (str.type == Double.class) {
-                    String temp =c.getString(i);
-                    if(temp==null){
+                } else if (str.type == Double.class) {
+                    if (c.isNull(i)) {
                         res.set(o, null);
-                    }else {
+                    } else {
                         Double d = c.getDouble(i);
-                        res.set(o,d);
+                        res.set(o, d);
                     }
-
-
-                }
-                if (str.type == Float.class) {
-                    String temp =c.getString(i);
-                    if(temp==null){
+                } else if (str.type == Float.class) {
+                    if (c.isNull(i)) {
                         res.set(o, null);
-                    }else {
+                    } else {
                         Float f = c.getFloat(i);
                         res.set(o, f);
                     }
-
-                }
-                if (str.type == Long.class) {
-
-                    String temp =c.getString(i);
-                    if(temp==null){
+                } else if (str.type == Long.class) {
+                    if (c.isNull(i)) {
                         res.set(o, null);
-                    }else {
+                    } else {
                         Long l = c.getLong(i);
                         res.set(o, l);
                     }
-
-                }
-                if (str.type == Short.class) {
-
-                    String temp =c.getString(i);
-                    if(temp==null){
+                } else if (str.type == Short.class) {
+                    if (c.isNull(i)) {
                         res.set(o, null);
-                    }else {
+                    } else {
                         Short sh = c.getShort(i);
                         res.set(o, sh);
                     }
-
-
-                }
-                if (str.type == boolean.class) {
+                } else if (str.type == boolean.class) {
                     boolean val;
                     val = c.getInt(i) != 0;
                     res.setBoolean(o, val);
-                }
-
-                if (str.type == Boolean.class) {
-                    String temp =c.getString(i);
-                    if(temp==null){
+                } else if (str.type == Boolean.class) {
+                    if (c.isNull(i)) {
                         res.set(o, null);
-                    }else {
+                    } else {
                         boolean val;
                         val = c.getInt(i) != 0;
                         res.setBoolean(o, val);
                     }
+                }else {
+                    new RuntimeException("Error orm set values");
                 }
             }
         }
