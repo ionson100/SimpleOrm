@@ -49,7 +49,6 @@ public class Configure implements ISession {
             }
 
         }
-//        new Configure(dataBaseName, context);
     }
 
     //////////////////////////////////////////////////// bulk
