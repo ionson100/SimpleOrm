@@ -1,6 +1,10 @@
 package orm;
 
 
+import android.database.sqlite.SQLiteDatabase;
+
+import java.util.List;
+
 public  interface IActionOrm<T> {
     void actionBeforeUpdate(T t);
 
@@ -14,3 +18,4 @@ public  interface IActionOrm<T> {
 
     void actionAfterDelete(T t);
 }
+

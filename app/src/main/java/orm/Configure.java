@@ -1,19 +1,36 @@
 package orm;
-
+/********************************************************************
+ * Copyright © 2016-2017 OOO Bitnic                                 *
+ * Created by OOO Bitnic on 08.02.16   corp@bitnic.ru               *
+ * ******************************************************************/
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.media.Image;
 import android.os.Build;
+
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import dalvik.system.DexFile;
+import dalvik.system.PathClassLoader;
+
 
 
 public class Configure implements ISession {
@@ -21,9 +38,10 @@ public class Configure implements ISession {
     static String dataBaseName;
     private static DataBaseHelper myDbHelper;
     private static boolean reloadBase = false;
-
     private SQLiteDatabase sqLiteDatabaseForReadable = null;
     private SQLiteDatabase sqLiteDatabaseForWritable = null;
+
+
 
     private Configure() {
         sqLiteDatabaseForReadable = GetSqLiteDatabaseForReadable();
@@ -47,7 +65,6 @@ public class Configure implements ISession {
             if (!myDbHelper.checkDataBase()) {
                 myDbHelper.createDataBase();
             }
-
         }
     }
 
@@ -65,12 +82,11 @@ public class Configure implements ISession {
                 try {
                     ses.execSQL(sql);
                 } catch (Exception ex) {
-                    int i = 0;
+                    //int i = 0;
                 }
             }
         }
     }
-    /////////////////////////////////////////////////////////////////////
 
     private static <T> List<List<T>> partition(Collection<T> members, int maxSize) {
         List<List<T>> res = new ArrayList<>();
@@ -90,13 +106,6 @@ public class Configure implements ISession {
         }
         return res;
     }
-
-
-//    private Configure(String dataBaseName, Context context) {
-//
-//
-//
-//    }
 
     public static boolean isLive() {
         return dataBaseName != null && myDbHelper != null;
@@ -131,11 +140,16 @@ public class Configure implements ISession {
     }
 
     private static String pizdaticusKey(ItemField field) {
-        if (field.type == double.class || field.type == float.class || field.type == Double.class || field.type == Float.class) {
-            return " REAL ";
+        if (field.type == float.class || field.type == Float.class) {
+            return " FLOAT ";
         }
-        if (field.type == int.class || field.type == long.class || field.type == short.class || field.type == byte.class || field.type == Integer.class ||
-                field.type == Long.class || field.type == Short.class || field.type == Byte.class) {
+        if(field.type == Double.class || field.type==double.class){
+            return " DOUBLE ";
+        }
+        if (field.type == int.class|| field.type == Integer.class
+                || field.type == long.class || field.type==Long.class
+                || field.type == short.class || field.type==Short.class
+                || field.type == byte.class ||field.type==Byte.class) {
             return " INTEGER ";
         }
         if (field.type == String.class) {
@@ -147,30 +161,59 @@ public class Configure implements ISession {
         return "";
     }
 
-    private static String pizdaticusField(ItemField field) {
-        if (field.type == double.class || field.type == float.class || field.type == Double.class || field.type == Float.class) {
-            return " REAL DEFAULT 0, ";
-        }
-        if (field.type == int.class || field.type == Enum.class || field.type == long.class || field.type == short.class || field.type == byte.class || field.type == Integer.class ||
-                field.type == Long.class || field.type == Short.class) {
-            return " INTEGER DEFAULT 0, ";
-        }
-        if (field.type == String.class) {
-            return " TEXT, ";
-        }
-        if (field.type == boolean.class || field.type == Boolean.class) {
-            return " BOOL DEFAULT 0, ";
-        }
 
-        if (field.type == byte[].class) {
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    private static String pizdaticusField(ItemField field) {
+
+
+        if (field.type == double[].class ||
+                field.type == float[].class ||
+                field.type == Double[].class ||
+                field.type == Float[].class) {
+            return " REAL DEFAULT 0, ";
+        }else if (field.type == int.class ||
+                field.type == BigDecimal[].class ||
+                field.type == String[].class ||
+                field.type == Enum[].class ||
+                field.type == long[].class ||
+                field.type == short[].class ||
+                field.type == byte[].class ||
+                field.type == Integer[].class ||
+                field.type == Long[].class ||
+                field.type==int[].class||
+                field.type == Short[].class) {
+            return " TEXT, ";
+        }else if (field.type == double.class ||
+                field.type == float.class ||
+                field.type == Double.class ||
+                field.type == Float.class) {
+            return " REAL DEFAULT 0, ";
+        }else   if (field.type == int.class ||
+                field.type == Enum.class ||
+                field.type == long.class ||
+                field.type == short.class ||
+                field.type == byte.class ||
+                field.type == Integer.class ||
+                field.type == Long.class ||
+                field.type == Short.class) {
+            return " TEXT, ";
+        } else  if (field.type == String.class||field.type==BigDecimal.class) {
+            return " TEXT, ";
+        }else  if (field.type == boolean.class || field.type == Boolean.class) {
+            return " BOOL DEFAULT 0, ";
+        } else if (field.type == byte[].class||field.type == Image.class) {
             return " BLOB, ";
+        }else if(field.type==Date.class){
+            return " DATETIME, ";
+        } else {
+            return "";
         }
-        return "";
     }
+
 
     public static void createTable(Class<?> aClass) {
         cacheMetaDate date = CacheDictionary.getCacheMetaDate(aClass);
-        StringBuilder sb = new StringBuilder("CREATE TABLE " + date.tableName + " (");
+        StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS " + date.tableName + " (");
         sb.append(date.keyColumn.columnName).append(" ");
         sb.append(pizdaticusKey(date.keyColumn));
         sb.append("PRIMARY KEY, ");
@@ -183,6 +226,59 @@ public class Configure implements ISession {
         String ss = s.substring(0, s.length() - 1);
         String sql = ss + ")";
         Configure.getSession().execSQL(sql);
+    }
+
+
+    public static String getStringCreateTable(Class<?> aClass) {
+        cacheMetaDate date = CacheDictionary.getCacheMetaDate(aClass);
+        StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS " + date.tableName + " (");
+        sb.append(date.keyColumn.columnName).append(" ");
+        sb.append(pizdaticusKey(date.keyColumn));
+        sb.append("PRIMARY KEY, ");
+        for (Object f : date.listColumn) {
+            ItemField ff = (ItemField) f;
+            sb.append(ff.columnName);
+            sb.append(pizdaticusField(ff));
+        }
+        String s = sb.toString().trim();
+        String ss = s.substring(0, s.length() - 1);
+        String sql = ss + ")";
+
+        return sql;
+    }
+
+
+
+
+    public static String getStringCreateAllTable(Context contex){
+        StringBuilder sb=new StringBuilder();
+
+        Set<Class> list=new HashSet<>();
+        try {
+            PathClassLoader classLoader = (PathClassLoader) contex.getClassLoader();
+
+            DexFile df = new DexFile(contex.getPackageCodePath());
+            for (Enumeration<String> iter = df.entries(); iter.hasMoreElements();) {
+
+                String s = iter.nextElement();
+                try{
+                    Class<?> aClass = classLoader.loadClass(s);
+                    if(aClass.isAnnotationPresent(Table.class)){
+                        list.add(aClass);
+                    }
+                }catch (Exception ss){
+
+                }
+            }
+            for (Class aClass : list) {
+                sb.append(getStringCreateTable(aClass));
+                sb.append(";").append("\n");
+            }
+        } catch (IOException e) {
+            return null;
+        }
+
+        return sb.toString();
     }
 
     // пакетная вставка
@@ -312,31 +408,45 @@ public class Configure implements ISession {
                     String json = ((IUserType) date).getString(field.get(item));
                     values.put(str.columnName, json);
                 } else {
-                    if (str.type == String.class)
+
+
+                    if (str.type == java.math.BigDecimal.class){
+                        Object sd=field.get(item);
+                        values.put(str.columnName,  sd.toString());
+                        continue;
+                    }else if (str.type == Date.class){
+                        if(field.get(item)==null){
+                            values.put(str.columnName,0d);
+                        }else {
+                            long ld= ((Date) field.get(item)).getTime();
+                            values.put(str.columnName,ld);
+                        }
+                        continue;
+                    }else  if (str.type == String.class){
                         values.put(str.columnName, (String) field.get(item));
-                    if (str.type == int.class)
+                    }else  if (str.type == int.class){
                         values.put(str.columnName, (int) field.get(item));
-                    if (str.type == long.class)
+                    }else if (str.type == long.class){
                         values.put(str.columnName, (long) field.get(item));
-                    if (str.type == short.class)
+                    }else  if (str.type == short.class){
                         values.put(str.columnName, (short) field.get(item));
-                    if (str.type == byte.class)
+                    }else if (str.type == byte.class){
                         values.put(str.columnName, (byte) field.get(item));
-                    if (str.type == Short.class)
+                    }else if (str.type == Short.class){
                         values.put(str.columnName, (Short) field.get(item));
-                    if (str.type == Long.class)
+                    }else  if (str.type == Long.class){
                         values.put(str.columnName, (Long) field.get(item));
-                    if (str.type == Integer.class)
+                    }else  if (str.type == Integer.class){
                         values.put(str.columnName, (Integer) field.get(item));
-                    if (str.type == Double.class)
+                    }else if (str.type == Double.class){
                         values.put(str.columnName, (Double) field.get(item));
-                    if (str.type == Float.class)
+                    }else if (str.type == Float.class){
                         values.put(str.columnName, (Float) field.get(item));
-                    if (str.type == byte[].class)
+                    }else if (str.type == byte[].class){
                         values.put(str.columnName, (byte[]) field.get(item));
-                    if (str.type == double.class)
+                    }else if (str.type == double.class) {
                         values.put(str.columnName, (double) field.get(item));
-                    if (str.type == boolean.class) {
+                    }else   if (str.type == boolean.class){
                         boolean val = (boolean) field.get(item);
                         if (val) {
                             values.put(str.columnName, 1);
@@ -344,13 +454,44 @@ public class Configure implements ISession {
                             values.put(str.columnName, 0);
                         }
                     }
-                }
+                    else   if (str.type == Boolean.class){
+                        Boolean val = (Boolean) field.get(item);
+                        if(val==null){
+                            values.putNull(str.columnName);
+                        }else {
+                            if (val) {
+                                values.put(str.columnName, 1);
+                            } else {
+                                values.put(str.columnName, 0);
+                            }
+                        }
 
+                    }
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
         return values;
+    }
+
+
+    private static String Arrayser(Collection objects){
+        StringBuilder stringBuilder=new StringBuilder();
+
+        int i=0;
+        for (Object object : objects) {
+            if(i!=0){
+                stringBuilder.append("@@@");
+
+
+            }
+            i++;
+            stringBuilder.append(object.toString());
+        }
+
+
+        return stringBuilder.toString();
     }
 
     @Override
@@ -393,7 +534,7 @@ public class Configure implements ISession {
     }
 
     @Override
-    public <T> List<T> getList(Class<T> tClass, String where, Object... objects) {
+    public <T> List<T> getList(Class<T> tClass, String where, Object... objects) throws SQLException {
         List<T> list = null;
         SQLiteDatabase con;
         try {
@@ -433,15 +574,18 @@ public class Configure implements ISession {
                             list.add((T) sd);
                         } while (c.moveToNext());
                     }
-                } finally {
+                }
+                catch (Exception ex){
+                    new RuntimeException("ORM getList ---" + ex.getMessage());
+                    Loger.LogE("ORM error list ________________________"+ex.getMessage());
+                }
+                finally {
                     c.close();
                 }
             }
-        } catch (SQLException e) {
-            new RuntimeException("ORM getList ---" + e.getMessage());
-            return null;
         } catch (Exception e) {
-            new RuntimeException("ORM getList---" + e.getMessage());
+            new RuntimeException("ORM getList ---" + e.getMessage());
+            Loger.LogE("ORM error list ________________________"+e.getMessage());
         }
         return list;
     }
@@ -460,14 +604,26 @@ public class Configure implements ISession {
                 } catch (InstantiationException e) {
                     e.printStackTrace();
                 }
-                Object sdd = data.getObject(c.getString(i));
+                String sd=c.getString(i);
+                Object sdd = data.getObject(sd);
                 res.set(o, sdd);
             } else {
                 if (str.type == int.class) {
                     res.setInt(o, c.getInt(i));
+                }else if(str.type==Date.class){
+
+                    long it=c.getLong(i);
+                    res.set(o, new Date(it));
+
+                }else if(str.type == java.math.BigDecimal.class){
+
+                    String dd=c.getString(i);
+                    res.set(o,new java.math.BigDecimal(c.getString(i)));
+
+
                 } else if (str.type == String.class) {
                     res.set(o, c.getString(i));
-                } else if (str.type == double.class) {
+                }else if (str.type == double.class) {
                     res.setDouble(o, c.getDouble(i));
                 } else if (str.type == float.class) {
                     res.setFloat(o, c.getFloat(i));
@@ -526,8 +682,8 @@ public class Configure implements ISession {
                         val = c.getInt(i) != 0;
                         res.setBoolean(o, val);
                     }
-                } else {
-                    new RuntimeException("Error orm set values");
+                }else {
+                    new RuntimeException("Error orm set values columnName: "+str.columnName+" fieldName: "+str.fieldName+" type: "+str.aClassUserType.getName()+" type: "+str.field.getGenericType());
                 }
             }
         }
@@ -536,7 +692,7 @@ public class Configure implements ISession {
             field.setAccessible(true);
             field.set(o, c.getInt(c.getColumnIndex(key.columnName)));
         } catch (Exception e) {
-            throw new RuntimeException("orm get id" + e.getMessage());
+            throw new RuntimeException("orm set id" + e.getMessage());
         }
     }
 
@@ -565,8 +721,10 @@ public class Configure implements ISession {
         }
 
         if (res.size() == 0) return null;
+
+
         if (res.size() > 1) {
-            throw new RuntimeException("orm (get) more than one");
+            throw new RuntimeException("orm (set) more than one ( type -"+tClass.getName()+", id - "+id.toString()+" )");
         }
         return res.get(0);
     }
@@ -649,7 +807,9 @@ public class Configure implements ISession {
 
     @Override
     public void endTransaction() {
-        myDbHelper.getWritableDatabase().endTransaction();
+        if(myDbHelper.getWritableDatabase().inTransaction()){
+            myDbHelper.getWritableDatabase().endTransaction();
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -713,12 +873,9 @@ public class Configure implements ISession {
 
         private static <T> List<List<T>> partition(Collection<T> members, int maxSize) {
             List<List<T>> res = new ArrayList<>();
-
             List<T> internal = new ArrayList<>();
-
             for (T member : members) {
                 internal.add(member);
-
                 if (internal.size() == maxSize) {
                     res.add(internal);
                     internal = new ArrayList<>();
@@ -756,21 +913,15 @@ public class Configure implements ISession {
                 ItemField f = (ItemField) metaDate.listColumn.get(i);
                 try {
                     Object value = f.field.get(o);
-
                     sql.append(getString(value, f.field.getType()));
-
-
                     if (i < metaDate.listColumn.size() - 1) {
                         sql.append(", ");
                     } else {
-
                     }
-
 
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("InsertBulk:" + e.getMessage());
                 }
-
             }
             sql.append(") ,");
         }
@@ -786,11 +937,27 @@ public class Configure implements ISession {
 
         private String getString(Object o, Class fClass) {
 
+            if( fClass==Date.class){
+                if(o==null){
+                    return "0";
+                }else {
+                    return String.valueOf((int)((Date)o).getTime());
+                }
+            }
+            if(fClass == java.math.BigDecimal.class){
+
+                if(o==null){
+                    return "0";
+                }else{
+                    return   ((BigDecimal)o).toString();
+                }
+
+            }
             if (fClass == String.class) {
                 if (o == null) {
                     return "null";
                 } else {
-                    return "'" + String.valueOf(o) + "'";
+                    return "'" + String.valueOf(o).replace("'", " ") + "'";
                 }
             } else if (fClass == boolean.class) {
 
