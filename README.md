@@ -302,7 +302,9 @@ class User1 implements IActionOrm {
         ISession ses= Configure.getSession();
         Configure.bulk(User.class, users, ses);*/
  Поддерживаются типы Date и BigDecimal  поля  в таблице должны быть соответственно integer  и string.
+```java
  createTable(Class<?> aClass) - автосоздание таблицы
  getStringCreateTable(Class<?> aClass) - строка для создания таблицы
  getStringCreateAllTable(Context contex) - строка создания всех таблиц.
+```
  Исходя из того что тип должен быть помечен @Table("tableName")
